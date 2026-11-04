@@ -188,9 +188,15 @@ export const AdminDashboard: React.FC = () => {
       });
   };
 
-  const chefs = staffData?.chefPerformance || data?.chefPerformance || [];
-  const waiters = staffData?.waiterPerformance || data?.waiterPerformance || [];
-  const managers = staffData?.managerPerformance || data?.managerPerformance || [];
+  const chefs = (staffData?.chefPerformance || data?.chefPerformance || []).filter(
+    (c: any) => c.username !== 'admin' && c.role?.toLowerCase() !== 'admin'
+  );
+  const waiters = (staffData?.waiterPerformance || data?.waiterPerformance || []).filter(
+    (w: any) => w.username !== 'admin' && w.role?.toLowerCase() !== 'admin'
+  );
+  const managers = (staffData?.managerPerformance || data?.managerPerformance || []).filter(
+    (m: any) => m.username !== 'admin' && m.role?.toLowerCase() !== 'admin'
+  );
 
   // Totals for summary banner
   const totalDishesCooked = chefs.reduce((acc: number, c: any) => acc + (Number(c.itemsPrepared) || 0), 0);
@@ -255,7 +261,7 @@ export const AdminDashboard: React.FC = () => {
               setActionError(null);
               setShowAddUserModal(true);
             }}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition shadow-lg shadow-amber-500/20"
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition shadow-lg shadow-amber-500/20"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ Add Staff Member</span>
@@ -1360,7 +1366,7 @@ export const AdminDashboard: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/25 transition"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-xl shadow-amber-500/25 transition"
           >
             Create Staff Account
           </button>

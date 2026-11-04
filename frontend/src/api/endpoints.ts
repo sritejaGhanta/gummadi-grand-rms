@@ -53,6 +53,8 @@ export const ordersApi = {
 
 export const kitchenApi = {
   getTasks: () => apiClient.get('/kitchen/tasks'),
+  getHistory: (params?: { range?: string; chefId?: string; dietary?: string; search?: string }) =>
+    apiClient.get('/kitchen/history', { params }),
   getChefs: () => apiClient.get('/kitchen/chefs'),
   acceptItem: (id: string, chefId?: string) => apiClient.put(`/kitchen/items/${id}/accept`, { chefId }),
   startPreparing: (id: string, chefId?: string) => apiClient.put(`/kitchen/items/${id}/prepare`, { chefId }),
@@ -71,12 +73,15 @@ export const billingApi = {
 
 export const reportsApi = {
   getAdminDashboard: () => apiClient.get('/reports/admin-dashboard'),
-  getStaffPerformance: (date?: string) => apiClient.get('/reports/staff-performance', { params: { date } }),
+  getStaffPerformance: (range?: string, date?: string) =>
+    apiClient.get('/reports/staff-performance', { params: { range, date } }),
   getStaffDetails: (userId: string, range = '7days') =>
     apiClient.get(`/reports/staff/${userId}`, { params: { range } }),
   getManagerDashboard: () => apiClient.get('/reports/manager-dashboard'),
-  getChefDashboard: () => apiClient.get('/reports/chef-dashboard'),
-  getStaffDashboard: () => apiClient.get('/reports/staff-dashboard'),
+  getChefDashboard: (range = 'today', chefId?: string) =>
+    apiClient.get('/reports/chef-dashboard', { params: { range, chefId } }),
+  getStaffDashboard: (range = 'today', staffId?: string) =>
+    apiClient.get('/reports/staff-dashboard', { params: { range, staffId } }),
 };
 
 export const rolesApi = {

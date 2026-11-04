@@ -249,7 +249,7 @@ export const UsersManagementPage: React.FC = () => {
             setErrorMsg(null);
             setShowAddModal(true);
           }}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/25 self-start md:self-auto shrink-0"
+          className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center gap-2 transition shadow-lg shadow-amber-500/25 self-start md:self-auto shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>+ Add New Staff User</span>
@@ -574,7 +574,7 @@ export const UsersManagementPage: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-xl transition"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-xl transition"
           >
             Create Staff Account
           </button>

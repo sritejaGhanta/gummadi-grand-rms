@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { floorsApi, tablesApi, menuApi, ordersApi } from '../api/endpoints';
+import { floorsApi, tablesApi, menuApi, ordersApi, reportsApi } from '../api/endpoints';
 import { useSocket } from '../context/SocketContext';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Flame,
   Search,
+  UtensilsCrossed,
   X,
 } from 'lucide-react';
 
@@ -40,6 +41,43 @@ export const StaffPosPage: React.FC = () => {
   const [isRequestingBill, setIsRequestingBill] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Staff Performance Analytics
+  const [staffAnalyticsRange, setStaffAnalyticsRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'overall'>('today');
+  const [staffStats, setStaffStats] = useState<{
+    ordersCompleted: number;
+    ordersTaken: number;
+    dishesServed: number;
+    itemsDeliveredCount: number;
+    totalSales: number;
+    pendingDeliveries: number;
+  }>({
+    ordersCompleted: 0,
+    ordersTaken: 0,
+    dishesServed: 0,
+    itemsDeliveredCount: 0,
+    totalSales: 0,
+    pendingDeliveries: 0,
+  });
+  const [loadingStaffStats, setLoadingStaffStats] = useState(false);
+
+  const loadStaffStats = async (range = staffAnalyticsRange) => {
+    try {
+      setLoadingStaffStats(true);
+      const res: any = await reportsApi.getStaffDashboard(range);
+      if (res) {
+        setStaffStats(res);
+      }
+    } catch (e) {
+      console.error('Failed to load staff stats:', e);
+    } finally {
+      setLoadingStaffStats(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStaffStats(staffAnalyticsRange);
+  }, [staffAnalyticsRange]);
 
   // Load floors and categories
   const loadInitialData = async () => {
@@ -115,12 +153,13 @@ export const StaffPosPage: React.FC = () => {
         loadActiveOrder(selectedTable.id);
       }
       loadTables();
+      loadStaffStats(staffAnalyticsRange);
     }
     if (lastEvent.type === 'menu:availability_updated') {
       // Reload items to update Sold Out flags
       menuApi.getItems(undefined, true).then(setMenuItems);
     }
-  }, [lastEvent]);
+  }, [lastEvent, staffAnalyticsRange]);
 
   // Cart operations
   const addToCart = (item: any) => {
@@ -286,6 +325,74 @@ export const StaffPosPage: React.FC = () => {
 
       {/* Center Main: Floor & Menu Section */}
       <div className={`flex-1 flex-col overflow-y-auto p-3 sm:p-6 space-y-6 ${mobileViewTab === 'menu' ? 'flex' : 'hidden lg:flex'}`}>
+        {/* STAFF SERVICE & ORDERS PERFORMANCE SUMMARY */}
+        <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-md bg-slate-900/60">
+          {/* Metrics: Orders Completed & Dishes Served */}
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center font-bold shrink-0">
+                <Receipt className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Orders Completed</div>
+                <div className="text-sm sm:text-base font-black text-white">
+                  {staffStats.ordersCompleted} <span className="text-xs font-normal text-slate-400">/ {staffStats.ordersTaken} booked</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">
+                <UtensilsCrossed className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dishes Served</div>
+                <div className="text-sm sm:text-base font-black text-white">
+                  {staffStats.dishesServed} <span className="text-xs font-normal text-slate-400">items</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold shrink-0">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ready in Kitchen</div>
+                <div className="text-sm sm:text-base font-black text-white">
+                  {staffStats.pendingDeliveries} <span className="text-xs font-normal text-slate-400">to pass</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Date Filter Buttons */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full shrink-0 custom-scrollbar">
+            <span className="text-[10px] uppercase font-bold text-slate-400 px-2 flex items-center gap-1 shrink-0 whitespace-nowrap">
+              <Clock className="w-3 h-3 text-amber-500" /> Filter:
+            </span>
+            {[
+              { id: 'today', label: 'Today' },
+              { id: 'yesterday', label: 'Yesterday' },
+              { id: 'week', label: 'This Week' },
+              { id: 'month', label: 'This Month' },
+              { id: 'overall', label: 'Overall' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStaffAnalyticsRange(tab.id as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 whitespace-nowrap ${
+                  staffAnalyticsRange === tab.id
+                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Floor Selection */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -312,7 +419,7 @@ export const StaffPosPage: React.FC = () => {
           </div>
 
           {/* Tables Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 mt-3">
             {tables.map((t) => {
               const isSelected = selectedTable?.id === t.id;
               let statusBadge = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
@@ -329,16 +436,16 @@ export const StaffPosPage: React.FC = () => {
                 <div
                   key={t.id}
                   onClick={() => setSelectedTable(t)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                  className={`p-3 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
                       ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10'
                       : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-lg text-white">{t.tableNumber}</span>
+                  <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                    <span className="font-black text-xs sm:text-sm text-white whitespace-nowrap">{t.tableNumber}</span>
                     <span
-                      className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${statusBadge}`}
+                      className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${statusBadge}`}
                     >
                       {statusLabel}
                     </span>
@@ -718,7 +825,7 @@ export const StaffPosPage: React.FC = () => {
                   </div>
                   <button
                     onClick={handleSendOrder}
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 transition"
+                    className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 transition"
                   >
                     <Send className="w-4 h-4" />
                     <span>Send Order to Kitchen</span>
@@ -732,7 +839,7 @@ export const StaffPosPage: React.FC = () => {
 
       {/* Floating Mobile Cart / Ticket Bar */}
       {mobileViewTab === 'menu' && (Object.keys(cart).length > 0 || (selectedTable && activeOrder)) && (
-        <div className="lg:hidden fixed bottom-4 inset-x-4 z-30 p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-2xl flex items-center justify-between font-bold">
+        <div className="lg:hidden fixed bottom-4 inset-x-4 z-30 p-3 rounded-2xl bg-amber-500 text-slate-950 shadow-2xl flex items-center justify-between font-bold">
           <div>
             <div className="text-[11px] uppercase tracking-wide opacity-80">
               {selectedTable ? `Table ${selectedTable.tableNumber}` : 'Dining Table'} • {Object.keys(cart).length} New Items

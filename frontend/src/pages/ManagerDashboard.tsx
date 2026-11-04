@@ -26,6 +26,8 @@ import {
   RefreshCw,
   Clock,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export const ManagerDashboard: React.FC = () => {
@@ -56,6 +58,15 @@ export const ManagerDashboard: React.FC = () => {
   const [billMethodFilter, setBillMethodFilter] = useState<'ALL' | 'CASH' | 'UPI' | 'CARD'>('ALL');
   const [billDateFilter, setBillDateFilter] = useState<string>('ALL'); // 'ALL' | 'TODAY' | 'YESTERDAY' | YYYY-MM-DD
   const [customDate, setCustomDate] = useState<string>('');
+
+  // Old Bills Pagination
+  const [billsCurrentPage, setBillsCurrentPage] = useState<number>(1);
+  const [billsPageSize, setBillsPageSize] = useState<number>(10);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setBillsCurrentPage(1);
+  }, [billSearch, billMethodFilter, billDateFilter, customDate]);
 
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -199,6 +210,15 @@ export const ManagerDashboard: React.FC = () => {
   const totalSettledRevenue = filteredOldBills.reduce((acc, b) => acc + (Number(b.grandTotal) || 0), 0);
   const totalTaxCollected = filteredOldBills.reduce((acc, b) => acc + (Number(b.taxAmount) || 0), 0);
 
+  // Paginated Old Bills
+  const paginatedOldBills = useMemo(() => {
+    const start = (billsCurrentPage - 1) * billsPageSize;
+    return filteredOldBills.slice(start, start + billsPageSize);
+  }, [filteredOldBills, billsCurrentPage, billsPageSize]);
+
+  const totalBillsPages = Math.ceil(filteredOldBills.length / billsPageSize) || 1;
+  const billsStartIndex = (billsCurrentPage - 1) * billsPageSize;
+
   // Export Old Bills to CSV
   const handleExportBillsCSV = () => {
     const headers = ['Bill Number', 'Date', 'Time', 'Table', 'Grand Total', 'Tax', 'Discount', 'Payment Method', 'Settled By'];
@@ -270,7 +290,7 @@ export const ManagerDashboard: React.FC = () => {
       )}
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Today's Revenue"
           value={`${currency}${metrics?.todayRevenue || '0.00'}`}
@@ -351,32 +371,34 @@ export const ManagerDashboard: React.FC = () => {
                   activeOrders.map((ord) => (
                     <div
                       key={ord.id}
-                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition"
+                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition"
                     >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">
-                            Table {ord.table?.tableNumber}
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm sm:text-base">
+                            {ord.table?.tableNumber?.startsWith('Table')
+                              ? ord.table.tableNumber
+                              : `Table ${ord.table?.tableNumber || 'Takeaway'}`}
                           </span>
-                          <span className="text-[10px] text-slate-400">({ord.orderNumber})</span>
                           {ord.table?.status === 'BILLING' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30 animate-pulse">
                               🔔 BILL REQUESTED
                             </span>
                           )}
+                          <span className="text-[10px] text-slate-400 font-mono">({ord.orderNumber})</span>
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          {ord.items?.length || 0} items | Waiter: {ord.waiter?.name || 'Staff'}
+                        <div className="text-xs text-slate-400">
+                          {ord.items?.length || 0} items • Waiter: <span className="text-slate-300 font-medium">{ord.waiter?.name || 'Staff'}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-amber-400 text-sm">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                        <span className="font-black text-amber-400 text-sm sm:text-base">
                           {currency}{ord.totalAmount}
                         </span>
                         <button
                           onClick={() => handleGenerateBill(ord.id)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition"
+                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition shrink-0"
                         >
                           <Receipt className="w-3.5 h-3.5" />
                           <span>Generate Bill</span>
@@ -407,34 +429,36 @@ export const ManagerDashboard: React.FC = () => {
                   unpaidBills.map((b) => (
                     <div
                       key={b.id}
-                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition"
+                      className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition"
                     >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">{b.billNumber}</span>
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                            Table {b.table?.tableNumber}
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            {b.table?.tableNumber?.startsWith('Table')
+                              ? b.table.tableNumber
+                              : `Table ${b.table?.tableNumber || 'Takeaway'}`}
                           </span>
+                          <span className="font-mono text-white text-xs font-bold">{b.billNumber}</span>
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          Grand Total: <strong className="text-white">{currency}{b.grandTotal}</strong> (GST {b.taxPercentage}%)
+                        <div className="text-xs text-slate-400">
+                          Grand Total: <strong className="text-emerald-400 font-bold">{currency}{b.grandTotal}</strong> <span className="text-[10px] text-slate-500">(GST {b.taxPercentage}%)</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
                         <button
                           onClick={() => {
                             setActiveBill(b);
                             setShowBillModal(true);
                           }}
-                          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
                           title="View & Print Bill"
                         >
                           <Printer className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openPayment(b)}
-                          className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition"
+                          className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition shrink-0"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>Collect Payment</span>
@@ -692,7 +716,7 @@ export const ManagerDashboard: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredOldBills.map((bill) => {
+                  paginatedOldBills.map((bill) => {
                     const dt = new Date(bill.createdAt);
                     const payment = bill.payments?.[0];
                     const method = payment?.paymentMethod || 'UPI';
@@ -709,7 +733,11 @@ export const ManagerDashboard: React.FC = () => {
                           <div className="text-[10px] text-slate-500 font-mono">{dt.toLocaleTimeString()}</div>
                         </td>
                         <td className="py-3 px-3">
-                          <span className="font-bold text-white">Table {bill.table?.tableNumber || 'Takeaway'}</span>
+                          <span className="font-bold text-white">
+                            {bill.table?.tableNumber?.startsWith('Table')
+                              ? bill.table.tableNumber
+                              : `Table ${bill.table?.tableNumber || 'Takeaway'}`}
+                          </span>
                           <span className="text-[10px] text-slate-400 block">{bill.table?.floor?.name || 'Main Hall'}</span>
                         </td>
                         <td className="py-3 px-3 text-slate-300">
@@ -760,6 +788,64 @@ export const ManagerDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Historical Bills Pagination Controls */}
+          {filteredOldBills.length > 0 && (
+            <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-900/40 rounded-2xl">
+              <div>
+                Showing <span className="font-bold text-white">{billsStartIndex + 1}</span> to{' '}
+                <span className="font-bold text-white">
+                  {Math.min(billsStartIndex + billsPageSize, filteredOldBills.length)}
+                </span>{' '}
+                of <span className="font-bold text-white">{filteredOldBills.length}</span> historical bills
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Page Size Selector */}
+                <div className="flex items-center gap-1.5">
+                  <span>Show:</span>
+                  <select
+                    value={billsPageSize}
+                    onChange={(e) => {
+                      setBillsPageSize(Number(e.target.value));
+                      setBillsCurrentPage(1);
+                    }}
+                    className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
+                  >
+                    <option value={5}>5 / page</option>
+                    <option value={10}>10 / page</option>
+                    <option value={20}>20 / page</option>
+                    <option value={50}>50 / page</option>
+                  </select>
+                </div>
+
+                {/* Page Prev/Next Buttons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setBillsCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={billsCurrentPage === 1}
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 font-bold text-xs text-amber-400">
+                    {billsCurrentPage} / {totalBillsPages}
+                  </div>
+
+                  <button
+                    onClick={() => setBillsCurrentPage((p) => Math.min(totalBillsPages, p + 1))}
+                    disabled={billsCurrentPage >= totalBillsPages}
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -767,7 +853,7 @@ export const ManagerDashboard: React.FC = () => {
       <Modal
         isOpen={showBillModal}
         onClose={() => setShowBillModal(false)}
-        title={`Tax Invoice Receipt - ${activeBill?.billNumber || 'Bill'}`}
+        title={activeBill?.billNumber || 'Bill'}
       >
         {activeBill && (
           <div className="space-y-4">
@@ -798,7 +884,10 @@ export const ManagerDashboard: React.FC = () => {
               {currency}{paymentAmount}
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              Table {activeBill?.table?.tableNumber} • Inclusive of GST
+              {activeBill?.table?.tableNumber?.startsWith('Table')
+                ? activeBill.table.tableNumber
+                : `Table ${activeBill?.table?.tableNumber || 'Takeaway'}`}{' '}
+              • Inclusive of GST
             </div>
           </div>
 

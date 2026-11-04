@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { KitchenService } from './kitchen.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -12,6 +12,27 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @Controller('kitchen')
 export class KitchenController {
   constructor(private readonly service: KitchenService) {}
+
+  @Get('history')
+  @RequirePermissions('kitchen.view')
+  @ApiOperation({ summary: 'Get kitchen prepared dishes history with date filter, search & metrics' })
+  async getKitchenHistory(
+    @CurrentUser() user: any,
+    @Query('range') range?: string,
+    @Query('chefId') chefId?: string,
+    @Query('dietary') dietary?: string,
+    @Query('search') search?: string,
+  ) {
+    const roleName = (typeof user?.role === 'string' ? user.role : user?.role?.name || '').toLowerCase();
+    // When logged in as chef, strictly filter by this chef's user.id only
+    const targetChefId = roleName === 'chef' ? user.id : (chefId || undefined);
+    return this.service.getKitchenPreparationHistory({
+      chefId: targetChefId,
+      range,
+      dietary,
+      search,
+    });
+  }
 
   @Get('tasks')
   @RequirePermissions('kitchen.view')

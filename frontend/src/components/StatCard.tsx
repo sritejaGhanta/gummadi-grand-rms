@@ -27,21 +27,21 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden transition-all hover:border-slate-700">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</p>
-          <h3 className="text-2xl font-bold text-white mt-1">{value}</h3>
-          {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+    <div className="glass-panel p-3.5 sm:p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden transition-all hover:border-slate-700">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">{title}</p>
+          <h3 className="text-lg sm:text-2xl font-black text-white mt-1 truncate">{value}</h3>
+          {subtitle && <p className="text-[10px] sm:text-xs text-slate-400 mt-1 truncate">{subtitle}</p>}
         </div>
         <div
-          className={`w-12 h-12 rounded-xl bg-gradient-to-br border flex items-center justify-center shrink-0 ${colorMap[color]}`}
+          className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br border flex items-center justify-center shrink-0 ${colorMap[color]}`}
         >
-          <Icon className="w-6 h-6" />
+          <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
         </div>
       </div>
       {trend && (
-        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center text-xs font-medium text-emerald-400">
+        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-800/80 flex items-center text-[10px] sm:text-xs font-medium text-emerald-400 truncate">
           <span>{trend}</span>
         </div>
       )}

@@ -32,7 +32,7 @@ export class BillingService {
     if (status) where.status = status;
     return this.billRepo.find({
       where,
-      relations: ['table', 'generatedBy', 'order', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
+      relations: ['table', 'table.floor', 'generatedBy', 'order', 'order.waiter', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -40,7 +40,7 @@ export class BillingService {
   async findOne(id: string) {
     const bill = await this.billRepo.findOne({
       where: { id },
-      relations: ['table', 'table.floor', 'generatedBy', 'order', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
+      relations: ['table', 'table.floor', 'generatedBy', 'order', 'order.waiter', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
     });
     if (!bill) throw new NotFoundException(`Bill ${id} not found`);
     return bill;
@@ -49,7 +49,7 @@ export class BillingService {
   async findByOrderId(orderId: string) {
     return this.billRepo.findOne({
       where: { orderId },
-      relations: ['table', 'table.floor', 'generatedBy', 'order', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
+      relations: ['table', 'table.floor', 'generatedBy', 'order', 'order.waiter', 'order.items', 'order.items.foodItem', 'payments', 'payments.recordedBy'],
     });
   }
 

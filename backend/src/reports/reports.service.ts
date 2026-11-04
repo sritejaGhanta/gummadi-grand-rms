@@ -656,19 +656,55 @@ export class ReportsService {
     };
   }
 
-  async getDailyStaffPerformance(targetDate?: string) {
-    let startDate: Date;
-    let endDate: Date;
+  getDateBounds(range?: string, targetDate?: string): { startDate: Date; endDate: Date; rangeLabel: string } {
+    const now = new Date();
     if (targetDate && typeof targetDate === 'string' && targetDate.includes('-')) {
       const parts = targetDate.split('T')[0].split('-').map(Number);
-      startDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0));
-      endDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999));
-    } else {
-      startDate = new Date();
-      startDate.setUTCHours(0, 0, 0, 0);
-      endDate = new Date();
-      endDate.setUTCHours(23, 59, 59, 999);
+      const start = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0));
+      const end = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999));
+      return { startDate: start, endDate: end, rangeLabel: targetDate };
     }
+
+    const r = (range || 'today').toLowerCase().trim();
+
+    if (r === 'yesterday') {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      const yStart = new Date(Date.UTC(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0));
+      const yEnd = new Date(Date.UTC(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999));
+      return { startDate: yStart, endDate: yEnd, rangeLabel: 'Yesterday' };
+    }
+
+    if (r === 'week' || r === 'this_week' || r === 'this week') {
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day; // Monday
+      const mon = new Date(now);
+      mon.setDate(mon.getDate() + diff);
+      const wStart = new Date(Date.UTC(mon.getFullYear(), mon.getMonth(), mon.getDate(), 0, 0, 0, 0));
+      const wEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: wStart, endDate: wEnd, rangeLabel: 'This Week' };
+    }
+
+    if (r === 'month' || r === 'this_month' || r === 'this month') {
+      const mStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0));
+      const mEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: mStart, endDate: mEnd, rangeLabel: 'This Month' };
+    }
+
+    if (r === 'overall' || r === 'all' || r === 'all_time') {
+      const oStart = new Date(Date.UTC(2020, 0, 1, 0, 0, 0, 0));
+      const oEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: oStart, endDate: oEnd, rangeLabel: 'Overall' };
+    }
+
+    // Default: 'today'
+    const tStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+    const tEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+    return { startDate: tStart, endDate: tEnd, rangeLabel: 'Today' };
+  }
+
+  async getDailyStaffPerformance(targetDate?: string, range?: string) {
+    const { startDate, endDate, rangeLabel } = this.getDateBounds(range, targetDate);
 
     // 1. Chef Performance
     const chefStats = await this.dataSource.query(
@@ -695,7 +731,7 @@ export class ReportsService {
       FROM users u
       JOIN roles r ON r.id = u."roleId"
       LEFT JOIN chef_items ci ON ci.user_id = u.id
-      WHERE LOWER(r.name) IN ('chef', 'admin')
+      WHERE LOWER(r.name) = 'chef'
       ORDER BY "itemsPrepared" DESC, "currentlyCooking" DESC;
     `,
       [startDate, endDate],
@@ -731,7 +767,7 @@ export class ReportsService {
       JOIN roles r ON r.id = u."roleId"
       LEFT JOIN waiter_orders wo ON wo.user_id = u.id
       LEFT JOIN waiter_deliveries wd ON wd.user_id = u.id
-      WHERE LOWER(r.name) IN ('staff', 'waiter', 'admin')
+      WHERE LOWER(r.name) IN ('staff', 'waiter')
       ORDER BY "ordersTaken" DESC, "itemsDelivered" DESC;
     `,
       [startDate, endDate],
@@ -771,7 +807,7 @@ export class ReportsService {
       JOIN roles r ON r.id = u."roleId"
       LEFT JOIN manager_bills mb ON mb.user_id = u.id
       LEFT JOIN manager_payments mp ON mp.user_id = u.id
-      WHERE LOWER(r.name) IN ('manager', 'admin', 'cashier')
+      WHERE LOWER(r.name) IN ('manager', 'cashier')
       ORDER BY "totalCollectedAmount" DESC, "billsGenerated" DESC;
     `,
       [startDate, endDate],
@@ -826,51 +862,114 @@ export class ReportsService {
     };
   }
 
-  async getChefDashboard(chefId?: string) {
+  async getChefDashboard(chefId?: string, range = 'today') {
+    const { startDate, endDate, rangeLabel } = this.getDateBounds(range);
+
     const pendingTasks = await this.itemRepo.count({ where: { status: OrderItemStatus.PENDING } });
     const preparingTasks = await this.itemRepo.count({ where: { status: OrderItemStatus.PREPARING } });
     const readyTasks = await this.itemRepo.count({ where: { status: OrderItemStatus.READY } });
 
-    const [prepStats] = await this.dataSource.query(`
-      SELECT COUNT(id)::int AS count
-      FROM order_items
-      WHERE (status = 'READY' OR status = 'DELIVERED')
-        AND DATE("readyAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
-        ${chefId ? `AND "chefId" = '${chefId}'` : ''}
-    `);
-    const todayPreparedCount = Number(prepStats?.count || 0);
+    // Prepared items within date range
+    const [prepStats] = await this.dataSource.query(
+      `
+      SELECT 
+        COUNT(oi.id)::int AS count,
+        COALESCE(SUM(oi.quantity), 0)::int AS total_dishes,
+        COUNT(CASE WHEN fi."isVeg" = true THEN 1 END)::int as veg_count,
+        COUNT(CASE WHEN fi."isVeg" = false THEN 1 END)::int as non_veg_count
+      FROM order_items oi
+      JOIN food_items fi ON fi.id = oi."foodItemId"
+      WHERE (oi.status = 'READY' OR oi.status = 'DELIVERED')
+        AND (
+          (oi."readyAt" >= $1 AND oi."readyAt" <= $2)
+          OR (oi."readyAt" IS NULL AND oi."updatedAt" >= $1 AND oi."updatedAt" <= $2)
+        )
+        ${chefId ? `AND oi."chefId" = '${chefId}'` : ''}
+    `,
+      [startDate, endDate],
+    );
+
+    // Top prepared items in this period
+    const topDishes = await this.dataSource.query(
+      `
+      SELECT fi.name, fi."isVeg", SUM(oi.quantity)::int as count
+      FROM order_items oi
+      JOIN food_items fi ON fi.id = oi."foodItemId"
+      WHERE (oi.status = 'READY' OR oi.status = 'DELIVERED')
+        AND (
+          (oi."readyAt" >= $1 AND oi."readyAt" <= $2)
+          OR (oi."readyAt" IS NULL AND oi."updatedAt" >= $1 AND oi."updatedAt" <= $2)
+        )
+        ${chefId ? `AND oi."chefId" = '${chefId}'` : ''}
+      GROUP BY fi.name, fi."isVeg"
+      ORDER BY count DESC
+      LIMIT 5
+    `,
+      [startDate, endDate],
+    );
 
     return {
+      range,
+      rangeLabel,
       pendingTasks,
       preparingTasks,
       readyTasks,
-      todayPreparedCount,
+      totalPreparedCount: Number(prepStats?.count || 0),
+      totalDishesPrepared: Number(prepStats?.total_dishes || prepStats?.count || 0),
+      todayPreparedCount: Number(prepStats?.total_dishes || prepStats?.count || 0),
+      vegPreparedCount: Number(prepStats?.veg_count || 0),
+      nonVegPreparedCount: Number(prepStats?.non_veg_count || 0),
+      topDishes: topDishes || [],
     };
   }
 
-  async getStaffDashboard(staffId?: string) {
-    const [staffOrderStats] = await this.dataSource.query(`
-      SELECT COUNT(id)::int AS count
-      FROM orders
-      WHERE DATE("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
-        ${staffId ? `AND "waiterId" = '${staffId}'` : ''}
-    `);
-    const todayOrdersReceived = Number(staffOrderStats?.count || 0);
+  async getStaffDashboard(staffId?: string, range = 'today') {
+    const { startDate, endDate, rangeLabel } = this.getDateBounds(range);
 
-    const [deliveryStats] = await this.dataSource.query(`
-      SELECT COUNT(id)::int AS count
-      FROM order_items
-      WHERE status = 'DELIVERED'
-        AND DATE("deliveredAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
-        ${staffId ? `AND "deliveredById" = '${staffId}'` : ''}
-    `);
-    const todayDeliveredCount = Number(deliveryStats?.count || 0);
+    // Orders stats in this date range
+    const [orderStats] = await this.dataSource.query(
+      `
+      SELECT 
+        COUNT(o.id)::int AS total_orders,
+        COUNT(CASE WHEN o.status = 'COMPLETED' THEN 1 END)::int AS completed_orders,
+        COALESCE(SUM(o."totalAmount"), 0)::numeric AS total_sales
+      FROM orders o
+      WHERE o."createdAt" >= $1 AND o."createdAt" <= $2
+        ${staffId ? `AND o."waiterId" = '${staffId}'` : ''}
+    `,
+      [startDate, endDate],
+    );
 
+    // Dishes/Items served/delivered in this date range
+    const [deliveryStats] = await this.dataSource.query(
+      `
+      SELECT 
+        COUNT(oi.id)::int AS items_served,
+        COALESCE(SUM(oi.quantity), 0)::int AS total_dishes_served
+      FROM order_items oi
+      WHERE oi.status = 'DELIVERED'
+        AND (
+          (oi."deliveredAt" >= $1 AND oi."deliveredAt" <= $2)
+          OR (oi."deliveredAt" IS NULL AND oi."updatedAt" >= $1 AND oi."updatedAt" <= $2)
+        )
+        ${staffId ? `AND oi."deliveredById" = '${staffId}'` : ''}
+    `,
+      [startDate, endDate],
+    );
+
+    // Pending items ready to be served right now
     const pendingDeliveries = await this.itemRepo.count({ where: { status: OrderItemStatus.READY } });
 
     return {
-      todayOrdersReceived,
-      todayDeliveredCount,
+      range,
+      rangeLabel,
+      ordersCompleted: Number(orderStats?.completed_orders || 0),
+      ordersTaken: Number(orderStats?.total_orders || 0),
+      todayOrdersReceived: Number(orderStats?.total_orders || 0),
+      dishesServed: Number(deliveryStats?.total_dishes_served || deliveryStats?.items_served || 0),
+      itemsDeliveredCount: Number(deliveryStats?.items_served || 0),
+      todayDeliveredCount: Number(deliveryStats?.total_dishes_served || deliveryStats?.items_served || 0),
+      totalSales: Number(orderStats?.total_sales || 0),
       pendingDeliveries,
     };
   }

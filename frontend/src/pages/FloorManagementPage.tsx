@@ -294,8 +294,8 @@ export const FloorManagementPage: React.FC = () => {
                   className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition relative group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-black text-lg text-white">{t.tableNumber}</span>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <span className="font-black text-base sm:text-lg text-white">{t.tableNumber}</span>
+                    <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition">
                       <button
                         onClick={() => openEditTable(t)}
                         className="p-1 text-slate-400 hover:text-amber-400 transition"

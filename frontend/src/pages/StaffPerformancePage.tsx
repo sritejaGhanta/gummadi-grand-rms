@@ -47,6 +47,7 @@ export const StaffPerformancePage: React.FC = () => {
   const yesterdayStr = formatLocalDate(yesterdayDate);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [selectedRange, setSelectedRange] = useState<'today' | 'yesterday' | 'week' | 'month' | 'overall'>('today');
   const [staffData, setStaffData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [staffTab, setStaffTab] = useState<'all' | 'chefs' | 'waiters' | 'managers'>('all');
@@ -57,18 +58,18 @@ export const StaffPerformancePage: React.FC = () => {
   const [staffTelemetryDetails, setStaffTelemetryDetails] = useState<any | null>(null);
   const [staffTelemetryLoading, setStaffTelemetryLoading] = useState(false);
 
-  const fetchStaffPerformance = (dateStr: string) => {
+  const fetchStaffPerformance = (range = selectedRange, dateStr = selectedDate) => {
     setLoading(true);
     reportsApi
-      .getStaffPerformance(dateStr)
-      .then((res) => setStaffData(res))
+      .getStaffPerformance(range, dateStr)
+      .then((res: any) => setStaffData(res))
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchStaffPerformance(selectedDate);
-  }, [selectedDate]);
+    fetchStaffPerformance(selectedRange, selectedDate);
+  }, [selectedRange, selectedDate]);
 
   // Real-time listener
   useEffect(() => {
@@ -79,7 +80,7 @@ export const StaffPerformancePage: React.FC = () => {
       lastEvent.type === 'billing:paid'
     ) {
       if (selectedDate === todayStr) {
-        fetchStaffPerformance(selectedDate);
+        fetchStaffPerformance(selectedRange, selectedDate);
       }
     }
   }, [lastEvent, selectedDate]);
@@ -103,9 +104,15 @@ export const StaffPerformancePage: React.FC = () => {
     setSelectedStaffRole(roleType);
   };
 
-  const chefs = staffData?.chefPerformance || [];
-  const waiters = staffData?.waiterPerformance || [];
-  const managers = staffData?.managerPerformance || [];
+  const chefs = (staffData?.chefPerformance || []).filter(
+    (c: any) => c.username !== 'admin' && c.role?.toLowerCase() !== 'admin'
+  );
+  const waiters = (staffData?.waiterPerformance || []).filter(
+    (w: any) => w.username !== 'admin' && w.role?.toLowerCase() !== 'admin'
+  );
+  const managers = (staffData?.managerPerformance || []).filter(
+    (m: any) => m.username !== 'admin' && m.role?.toLowerCase() !== 'admin'
+  );
 
   const totalDishesCooked = chefs.reduce((acc: number, c: any) => acc + (Number(c.itemsPrepared) || 0), 0);
   const totalDishesCooking = chefs.reduce((acc: number, c: any) => acc + (Number(c.currentlyCooking) || 0), 0);
@@ -132,27 +139,30 @@ export const StaffPerformancePage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick Date Presets */}
-          <button
-            onClick={() => setSelectedDate(todayStr)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
-              selectedDate === todayStr
-                ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20'
-                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600'
-            }`}
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setSelectedDate(yesterdayStr)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
-              selectedDate === yesterdayStr
-                ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20'
-                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600'
-            }`}
-          >
-            Yesterday
-          </button>
+          {/* Quick Date Presets: Today | Yesterday | This Week | This Month | Overall */}
+          {[
+            { id: 'today', label: 'Today' },
+            { id: 'yesterday', label: 'Yesterday' },
+            { id: 'week', label: 'This Week' },
+            { id: 'month', label: 'This Month' },
+            { id: 'overall', label: 'Overall' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setSelectedRange(tab.id as any);
+                if (tab.id === 'today') setSelectedDate(todayStr);
+                if (tab.id === 'yesterday') setSelectedDate(yesterdayStr);
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition border ${
+                selectedRange === tab.id
+                  ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20'
+                  : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
 
           {/* Date Picker with Prev / Next Day navigation */}
           <div className="flex items-center rounded-xl bg-slate-900 border border-slate-700 overflow-hidden">
@@ -182,7 +192,7 @@ export const StaffPerformancePage: React.FC = () => {
           </div>
 
           <button
-            onClick={() => fetchStaffPerformance(selectedDate)}
+            onClick={() => fetchStaffPerformance(selectedRange, selectedDate)}
             disabled={loading}
             className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
             title="Refresh Staff Telemetry"

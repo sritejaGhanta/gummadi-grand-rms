@@ -20,6 +20,182 @@ export class KitchenService {
     private readonly logService: ActivityLogsService,
   ) {}
 
+  getDateBounds(range = 'today'): { startDate: Date; endDate: Date; rangeLabel: string } {
+    const now = new Date();
+    const r = (range || 'today').toLowerCase().trim();
+
+    if (r === 'yesterday') {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      const yStart = new Date(Date.UTC(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0));
+      const yEnd = new Date(Date.UTC(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999));
+      return { startDate: yStart, endDate: yEnd, rangeLabel: 'Yesterday' };
+    }
+
+    if (r === 'week' || r === 'this_week' || r === 'this week') {
+      const day = now.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const mon = new Date(now);
+      mon.setDate(mon.getDate() + diff);
+      const wStart = new Date(Date.UTC(mon.getFullYear(), mon.getMonth(), mon.getDate(), 0, 0, 0, 0));
+      const wEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: wStart, endDate: wEnd, rangeLabel: 'This Week' };
+    }
+
+    if (r === 'month' || r === 'this_month' || r === 'this month') {
+      const mStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0));
+      const mEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: mStart, endDate: mEnd, rangeLabel: 'This Month' };
+    }
+
+    if (r === 'overall' || r === 'all' || r === 'all_time') {
+      const oStart = new Date(Date.UTC(2020, 0, 1, 0, 0, 0, 0));
+      const oEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+      return { startDate: oStart, endDate: oEnd, rangeLabel: 'Overall' };
+    }
+
+    // Default: 'today'
+    const tStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+    const tEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
+    return { startDate: tStart, endDate: tEnd, rangeLabel: 'Today' };
+  }
+
+  async getKitchenPreparationHistory(options: {
+    chefId?: string;
+    range?: string;
+    search?: string;
+    dietary?: string;
+  }) {
+    const { startDate, endDate, rangeLabel } = this.getDateBounds(options.range);
+
+    const qb = this.itemRepo
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.foodItem', 'foodItem')
+      .leftJoinAndSelect('foodItem.category', 'category')
+      .leftJoinAndSelect('item.order', 'order')
+      .leftJoinAndSelect('order.table', 'table')
+      .leftJoinAndSelect('table.floor', 'floor')
+      .leftJoinAndSelect('order.waiter', 'waiter')
+      .leftJoinAndSelect('item.chef', 'chef')
+      .where('item.status IN (:...statuses)', {
+        statuses: [OrderItemStatus.READY, OrderItemStatus.DELIVERED],
+      })
+      .andWhere(
+        '((item.readyAt >= :startDate AND item.readyAt <= :endDate) OR (item.readyAt IS NULL AND item.updatedAt >= :startDate AND item.updatedAt <= :endDate))',
+        { startDate, endDate },
+      );
+
+    if (options.chefId) {
+      qb.andWhere('item.chefId = :chefId', { chefId: options.chefId });
+    }
+
+    if (options.dietary === 'VEG') {
+      qb.andWhere('foodItem.isVeg = true');
+    } else if (options.dietary === 'NON_VEG') {
+      qb.andWhere('foodItem.isVeg = false');
+    }
+
+    if (options.search?.trim()) {
+      const s = `%${options.search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(foodItem.name) LIKE :s OR LOWER(order.orderNumber) LIKE :s OR LOWER(table.tableNumber) LIKE :s OR LOWER(chef.name) LIKE :s)',
+        { s },
+      );
+    }
+
+    qb.orderBy('item.readyAt', 'DESC').addOrderBy('item.updatedAt', 'DESC');
+
+    const historyItems = await qb.getMany();
+
+    // Calculate detailed aggregates
+    let totalDishes = 0;
+    let vegCount = 0;
+    let nonVegCount = 0;
+    let totalPrepMinutes = 0;
+    let prepCountWithTime = 0;
+    const dishFrequency: Record<string, { name: string; isVeg: boolean; count: number; category: string }> = {};
+
+    const formatted = historyItems.map((item) => {
+      const qty = item.quantity || 1;
+      totalDishes += qty;
+      if (item.foodItem?.isVeg) {
+        vegCount += qty;
+      } else {
+        nonVegCount += qty;
+      }
+
+      // Preparation duration in minutes
+      let prepMinutes = 0;
+      if (item.startedAt && item.readyAt) {
+        const diffMs = new Date(item.readyAt).getTime() - new Date(item.startedAt).getTime();
+        prepMinutes = Math.max(1, Math.round(diffMs / 60000));
+        totalPrepMinutes += prepMinutes;
+        prepCountWithTime++;
+      } else if (item.acceptedAt && item.readyAt) {
+        const diffMs = new Date(item.readyAt).getTime() - new Date(item.acceptedAt).getTime();
+        prepMinutes = Math.max(1, Math.round(diffMs / 60000));
+        totalPrepMinutes += prepMinutes;
+        prepCountWithTime++;
+      }
+
+      const dishName = item.foodItem?.name || 'Unknown Item';
+      if (!dishFrequency[dishName]) {
+        dishFrequency[dishName] = {
+          name: dishName,
+          isVeg: !!item.foodItem?.isVeg,
+          count: 0,
+          category: item.foodItem?.category?.name || 'General',
+        };
+      }
+      dishFrequency[dishName].count += qty;
+
+      return {
+        id: item.id,
+        orderId: item.orderId,
+        orderNumber: item.order?.orderNumber || 'N/A',
+        tableNumber: item.order?.table?.tableNumber || 'N/A',
+        floorName: item.order?.table?.floor?.name || 'Main Hall',
+        foodItemId: item.foodItemId,
+        dishName,
+        categoryName: item.foodItem?.category?.name || 'Main Course',
+        isVeg: item.foodItem?.isVeg ?? true,
+        price: item.unitPrice,
+        totalPrice: item.totalPrice,
+        quantity: qty,
+        status: item.status,
+        specialInstructions: item.specialInstructions,
+        chefId: item.chefId,
+        chefName: item.chef?.name || item.chef?.username || 'Executive Chef',
+        waiterName: item.order?.waiter?.name || item.order?.waiter?.username || 'Staff',
+        orderPlacedAt: item.createdAt,
+        acceptedAt: item.acceptedAt,
+        startedAt: item.startedAt,
+        readyAt: item.readyAt,
+        deliveredAt: item.deliveredAt,
+        prepMinutes,
+      };
+    });
+
+    const topDishes = Object.values(dishFrequency)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const avgPrepMinutes = prepCountWithTime > 0 ? Math.round(totalPrepMinutes / prepCountWithTime) : 12;
+
+    return {
+      range: options.range || 'today',
+      rangeLabel,
+      totalOrdersHandled: new Set(historyItems.map((i) => i.orderId)).size,
+      totalDishesPrepared: totalDishes,
+      totalBatches: historyItems.length,
+      vegCount,
+      nonVegCount,
+      avgPrepMinutes,
+      topDishes,
+      items: formatted,
+    };
+  }
+
   async getActiveKitchenTasks() {
     return this.itemRepo.find({
       where: {

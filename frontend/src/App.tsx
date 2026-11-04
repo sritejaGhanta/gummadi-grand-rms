@@ -21,6 +21,7 @@ import { ActivityLogsPage } from './pages/ActivityLogsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersManagementPage } from './pages/UsersManagementPage';
 import { StaffPerformancePage } from './pages/StaffPerformancePage';
+import { ChefHistoryPage } from './pages/ChefHistoryPage';
 
 const RoleBasedRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -144,6 +145,22 @@ export const App: React.FC = () => {
                 }
               />
               <Route
+                path="/kitchen/history"
+                element={
+                  <ProtectedLayout requiredPermission="kitchen.view">
+                    <ChefHistoryPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/kitchen-history"
+                element={
+                  <ProtectedLayout requiredPermission="kitchen.view">
+                    <ChefHistoryPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
                 path="/manager"
                 element={
                   <ProtectedLayout requiredPermission="billing.create">
@@ -162,7 +179,7 @@ export const App: React.FC = () => {
               <Route
                 path="/users"
                 element={
-                  <ProtectedLayout requiredPermission="users.manage">
+                  <ProtectedLayout requiredRole={['admin']}>
                     <UsersManagementPage />
                   </ProtectedLayout>
                 }
@@ -170,7 +187,7 @@ export const App: React.FC = () => {
               <Route
                 path="/menu-manage"
                 element={
-                  <ProtectedLayout requiredPermission="menu.view">
+                  <ProtectedLayout requiredRole={['admin', 'manager']}>
                     <MenuManagementPage />
                   </ProtectedLayout>
                 }
@@ -178,7 +195,7 @@ export const App: React.FC = () => {
               <Route
                 path="/floors-manage"
                 element={
-                  <ProtectedLayout requiredPermission="tables.manage">
+                  <ProtectedLayout requiredRole={['admin', 'manager']}>
                     <FloorManagementPage />
                   </ProtectedLayout>
                 }
@@ -194,7 +211,7 @@ export const App: React.FC = () => {
               <Route
                 path="/audit-logs"
                 element={
-                  <ProtectedLayout requiredPermission="audit.view">
+                  <ProtectedLayout requiredRole={['admin']}>
                     <ActivityLogsPage />
                   </ProtectedLayout>
                 }

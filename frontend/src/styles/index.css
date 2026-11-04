@@ -63,7 +63,7 @@
   --theme-secondary-rgb: 15, 23, 42;
 }
 
-/* ALL ACTION & PRIMARY BUTTONS UNIFIED WITH THEME PRIMARY COLOR */
+/* ALL ACTION & PRIMARY BUTTONS UNIFIED WITH SOLID THEME PRIMARY COLOR (NO GRADIENTS) */
 button.bg-amber-500,
 button.bg-amber-600,
 button.bg-brand-500,
@@ -71,10 +71,17 @@ button.bg-blue-600,
 button.bg-blue-500,
 button.bg-emerald-500,
 button.bg-emerald-600,
+button[class*="from-amber"],
+button[class*="from-emerald"],
+button[class*="from-blue"],
+button[class*="bg-gradient"],
 a.bg-amber-500,
 a.bg-amber-600,
 a.bg-blue-600,
-a.bg-emerald-500 {
+a.bg-emerald-500,
+a[class*="from-amber"],
+a[class*="bg-gradient"] {
+  background-image: none !important;
   background-color: var(--theme-primary) !important;
   color: var(--theme-primary-contrast, #020617) !important;
   border-color: var(--theme-primary) !important;
@@ -85,6 +92,7 @@ button.bg-amber-600 svg,
 button.bg-blue-600 svg,
 button.bg-emerald-500 svg,
 button.bg-emerald-600 svg,
+button[class*="from-amber"] svg,
 a.bg-amber-500 svg,
 a.bg-blue-600 svg,
 a.bg-emerald-500 svg {
@@ -98,11 +106,19 @@ button.hover\:bg-blue-500:hover,
 button.hover\:bg-blue-600:hover,
 button.hover\:bg-emerald-400:hover,
 button.hover\:bg-emerald-500:hover,
+button[class*="from-amber"]:hover,
+button[class*="from-emerald"]:hover,
+button[class*="from-blue"]:hover,
+button[class*="bg-gradient"]:hover,
 a.hover\:bg-amber-400:hover,
 a.hover\:bg-blue-500:hover,
-a.hover\:bg-emerald-400:hover {
+a.hover\:bg-emerald-400:hover,
+a[class*="from-amber"]:hover,
+a[class*="bg-gradient"]:hover {
+  background-image: none !important;
   background-color: var(--theme-primary-hover) !important;
   border-color: var(--theme-primary-hover) !important;
+  color: var(--theme-primary-contrast, #020617) !important;
 }
 
 .bg-amber-500,
@@ -157,26 +173,6 @@ a.hover\:bg-emerald-400:hover {
   box-shadow: 0 10px 15px -3px rgba(var(--theme-primary-rgb), 0.25), 0 4px 6px -4px rgba(var(--theme-primary-rgb), 0.15) !important;
 }
 
-.from-amber-600,
-.from-amber-500,
-.from-emerald-600,
-.from-emerald-500,
-.from-blue-600,
-.from-blue-500 {
-  --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgba(var(--theme-primary-rgb), 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.to-amber-400,
-.to-amber-500,
-.to-emerald-400,
-.to-emerald-500,
-.to-blue-400,
-.to-blue-500 {
-  --tw-gradient-to: var(--theme-primary-hover) var(--tw-gradient-to-position) !important;
-}
-
 .focus\:border-amber-500:focus {
   border-color: var(--theme-primary) !important;
 }
@@ -184,3 +180,41 @@ a.hover\:bg-emerald-400:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--theme-primary) !important;
 }
+
+/* ========================================================
+   THERMAL POS PRINTER 80MM RECEIPT PRINT OPTIMIZATIONS
+   ======================================================== */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* Hide the rest of the application interface during print */
+  body * {
+    visibility: hidden;
+  }
+  #printable-bill-receipt,
+  #printable-bill-receipt * {
+    visibility: visible;
+  }
+  #printable-bill-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 4mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+

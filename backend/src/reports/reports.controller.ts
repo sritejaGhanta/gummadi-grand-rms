@@ -22,9 +22,12 @@ export class ReportsController {
 
   @Get('staff-performance')
   @RequirePermissions('reports.view')
-  @ApiOperation({ summary: 'Daily staff performance by role and date' })
-  async getStaffPerformance(@CurrentUser() user: any) {
-    return this.service.getDailyStaffPerformance();
+  @ApiOperation({ summary: 'Daily staff performance by role and date/range' })
+  async getStaffPerformance(
+    @Query('range') range?: string,
+    @Query('date') date?: string,
+  ) {
+    return this.service.getDailyStaffPerformance(date, range);
   }
 
   @Get('staff/:userId')
@@ -46,15 +49,27 @@ export class ReportsController {
 
   @Get('chef-dashboard')
   @RequirePermissions('kitchen.view')
-  @ApiOperation({ summary: 'Chef metrics dashboard' })
-  async getChefDashboard(@CurrentUser() user: any) {
-    return this.service.getChefDashboard(user.id);
+  @ApiOperation({ summary: 'Chef metrics dashboard with date filter' })
+  async getChefDashboard(
+    @CurrentUser() user: any,
+    @Query('range') range?: string,
+    @Query('chefId') chefId?: string,
+  ) {
+    const roleName = (typeof user?.role === 'string' ? user.role : user?.role?.name || '').toLowerCase();
+    const targetChefId = chefId || (roleName === 'chef' ? user.id : undefined);
+    return this.service.getChefDashboard(targetChefId, range);
   }
 
   @Get('staff-dashboard')
   @RequirePermissions('orders.view')
-  @ApiOperation({ summary: 'Staff metrics dashboard' })
-  async getStaffDashboard(@CurrentUser() user: any) {
-    return this.service.getStaffDashboard(user.id);
+  @ApiOperation({ summary: 'Staff metrics dashboard with date filter' })
+  async getStaffDashboard(
+    @CurrentUser() user: any,
+    @Query('range') range?: string,
+    @Query('staffId') staffId?: string,
+  ) {
+    const roleName = (typeof user?.role === 'string' ? user.role : user?.role?.name || '').toLowerCase();
+    const targetStaffId = staffId || (['staff', 'waiter'].includes(roleName) ? user.id : undefined);
+    return this.service.getStaffDashboard(targetStaffId, range);
   }
 }

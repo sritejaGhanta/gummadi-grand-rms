@@ -28,82 +28,89 @@ export const Sidebar: React.FC = () => {
   }, [location.pathname]);
 
   const links = [
-    // 1. Admin Executive Dashboard (Topmost position as requested)
+    // 1. Admin Executive Dashboard (Admin only)
     {
       to: '/admin',
       label: 'Admin Overview',
       icon: LayoutDashboard,
       show: isAdmin,
     },
-    // 2. Staff / Waiter POS
+    // 2. Manager Operations & Cashier Billing (Topmost #1 for Manager)
+    {
+      to: '/manager',
+      label: 'Manager Operations & Cashier Billing',
+      icon: Receipt,
+      show: isAdmin || isManager,
+    },
+    // 3. Staff / Waiter POS
     {
       to: '/pos',
       label: 'Staff POS & Orders',
       icon: Smartphone,
-      show: isAdmin || isManager || isStaff || hasPermission('orders.create') || hasPermission('orders.view'),
+      show: isAdmin || isManager || isStaff,
     },
-    // 3. Kitchen Display System
+    // 4. Kitchen Display System
     {
       to: '/kitchen',
-      label: 'Kitchen KDS',
+      label: 'Kitchen KDS (Live)',
       icon: ChefHat,
-      show: isAdmin || isManager || isChef || hasPermission('kitchen.view'),
+      show: isAdmin || isManager || isChef,
     },
-    // 4. Manager Portal
+    // 5. Dedicated Chef Preparation & Cooking History (Separate Menu Option)
     {
-      to: '/manager',
-      label: 'Manager Ops & Billing',
-      icon: Receipt,
-      show: isAdmin || isManager || hasPermission('billing.create'),
+      to: '/kitchen/history',
+      label: 'Chef Cooking History',
+      icon: History,
+      show: isAdmin || isManager || isChef,
     },
-    // 5. Dedicated Staff Performance & Operations
+    // 6. Dedicated Staff Performance & Operations
     {
       to: '/staff-performance',
       label: 'Staff Daily Performance',
       icon: Activity,
-      show: isAdmin || isManager || hasPermission('reports.view'),
-    },
-    // 6. Dedicated Users Component
-    {
-      to: '/users',
-      label: 'Users & Telemetry',
-      icon: Users,
-      show: isAdmin || isManager || hasPermission('users.manage'),
+      show: isAdmin || isManager,
     },
     // 7. Menu Management
     {
       to: '/menu-manage',
       label: 'Menu & Pricing',
       icon: Utensils,
-      show: isAdmin || isManager || isChef || hasPermission('menu.view') || hasPermission('menu.manage') || hasPermission('menu.availability.update'),
+      show: isAdmin || isManager,
     },
-    // 8. Floors & Tables
+    // 8. Floors & Tables Management (Strictly Admin & Manager only)
     {
       to: '/floors-manage',
       label: 'Floors & Tables',
       icon: Layers,
-      show: isAdmin || isManager || hasPermission('tables.manage'),
+      show: isAdmin || isManager,
     },
-    // 9. Role Permissions
+    // 9. Dedicated Users Component (Strictly Admin only)
+    {
+      to: '/users',
+      label: 'Users & Telemetry',
+      icon: Users,
+      show: isAdmin,
+    },
+    // 10. Role Permissions (Strictly Admin only)
     {
       to: '/roles-manage',
       label: 'Roles & Permissions',
       icon: ShieldCheck,
-      show: isAdmin || hasPermission('roles.manage'),
+      show: isAdmin,
     },
-    // 10. Activity / Audit Logs
+    // 11. Activity / Audit Logs (Strictly Admin only)
     {
       to: '/audit-logs',
       label: 'System Audit Logs',
       icon: History,
-      show: isAdmin || isManager || hasPermission('audit.view'),
+      show: isAdmin,
     },
-    // 11. Settings & Branding
+    // 12. Settings & Branding (Strictly Admin only)
     {
       to: '/settings',
       label: 'Settings & Branding',
       icon: Settings,
-      show: isAdmin || hasPermission('settings.manage'),
+      show: isAdmin,
     },
   ];
 
@@ -127,6 +134,7 @@ export const Sidebar: React.FC = () => {
             <NavLink
               key={item.to}
               to={item.to}
+              end
               onClick={closeMobile}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${

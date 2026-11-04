@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "RMS Staff & Kitchen",
+    "name": "Gummadi Grand RMS",
     "slug": "rms-restaurant-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.royalfeast.rms",
+      "package": "com.gummadigrand.rms",
       "adaptiveIcon": {
         "backgroundColor": "#d97706"
       }
