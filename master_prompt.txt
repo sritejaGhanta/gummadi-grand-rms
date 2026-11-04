@@ -1,0 +1,1138 @@
+# Build a Complete Restaurant Management System (RMS)
+
+Act as a Senior Software Architect, Senior Full-Stack Engineer, UI/UX Designer, Database Architect, and QA Engineer with 30+ years of software development experience.
+
+Build a complete, professional, production-quality **Restaurant Management System (RMS)** designed initially for a single restaurant with multiple floors, tables, staff members, chefs, and managers.
+
+This must be a real, fully functional application, not just a UI prototype or static dashboard.
+
+The system will initially operate within the restaurant's local intranet network (LAN/Wi-Fi). External internet access is not required for normal application operations.
+
+---
+
+# 1. Technology Stack
+
+Use the following technologies:
+
+### Frontend
+- Latest stable React version.
+- TypeScript.
+- Vite.
+- React Router.
+- TanStack Query for API state management.
+- Axios for API communication.
+- React Hook Form.
+- Zod for validation.
+- Tailwind CSS or Bootstrap for UI styling.
+- Reusable, modular components.
+
+### Backend
+- Latest stable NestJS version.
+- TypeScript.
+- RESTful APIs.
+- Modular architecture.
+- JWT authentication.
+- Role-Based Access Control (RBAC).
+- Permission-Based Access Control.
+- NestJS Guards, Interceptors, Pipes, Filters, and Middleware wherever appropriate.
+- Swagger/OpenAPI documentation.
+
+### Database
+- PostgreSQL.
+- TypeORM.
+- Database migrations.
+- Proper foreign keys, indexes, constraints, and relationships.
+- Use transactions for order, billing, and payment operations.
+
+### Real-time Communication
+- Socket.IO / WebSockets.
+- Real-time order notifications.
+- Kitchen order updates.
+- Service staff notifications.
+- Manager notifications.
+
+---
+
+# 2. Application Architecture
+
+Build the application with three major layers:
+
+1. React Frontend.
+2. NestJS Backend.
+3. PostgreSQL Database.
+
+Use a clean monorepo or well-organized separate frontend/backend structure.
+
+Keep the architecture modular, scalable, maintainable, and easy to extend.
+
+Suggested structure:
+
+- frontend/
+- backend/
+- database/
+- docs/
+- docker/
+- README.md
+
+Do not put all application logic into a single file or module.
+
+---
+
+# 3. User Roles and Permission Management
+
+The application must support the following roles:
+
+1. Admin
+2. Sub Admin
+3. Manager
+4. Chef
+5. Service Boy / Staff
+
+## Admin
+
+Admin has complete access to the application.
+
+Admin can:
+
+- Access all dashboards.
+- Create, update, deactivate, and manage users.
+- Create and manage roles.
+- Configure role permissions.
+- Manage restaurant floors.
+- Manage tables and seating capacities.
+- Manage food categories.
+- Manage food items and prices.
+- Manage menu availability settings.
+- Manage restaurant configuration.
+- Manage branding and application settings.
+- View all orders.
+- View all bills and payments.
+- View revenue reports.
+- View staff performance.
+- View chef performance.
+- View audit logs.
+- Access all modules.
+
+## Sub Admin
+
+Sub Admin permissions must be configurable by Admin.
+
+## Dynamic Role and Permission Management
+
+This is an important requirement.
+
+Do not hardcode permissions directly into frontend components.
+
+Admin should have a dedicated Role Management section.
+
+Admin can:
+
+1. Create a role.
+2. Edit an existing role.
+3. Assign permissions to the role.
+4. Enable or disable individual capabilities using checkboxes.
+5. Save the permissions.
+6. Assign the role to users.
+
+Example:
+
+Staff Role:
+- Dashboard: View
+- Menu: View
+- Orders: Create
+- Orders: View
+- Orders: Update
+- Tables: View
+- Billing: View
+- Reports: No Access
+- Settings: No Access
+
+Chef Role:
+- Dashboard: View
+- Kitchen Orders: View
+- Kitchen Orders: Accept
+- Kitchen Orders: Start Preparation
+- Kitchen Orders: Mark Ready
+- Menu Availability: View
+- Menu Availability: Update
+
+Manager Role:
+- Dashboard: View
+- Orders: View
+- Tables: View
+- Billing: Manage
+- Reports: View
+- Staff Performance: View
+- Chef Performance: View
+- Revenue Reports: View
+
+Permissions must be enforced on both frontend and backend.
+
+Create a reusable permission system using permission keys such as:
+
+dashboard.view
+orders.create
+orders.view
+orders.update
+kitchen.view
+kitchen.accept
+kitchen.prepare
+kitchen.mark_ready
+menu.view
+menu.manage
+menu.availability.update
+tables.manage
+billing.create
+billing.view
+reports.view
+users.manage
+roles.manage
+settings.manage
+
+Allow Admin to configure permissions without changing source code.
+
+---
+
+# 4. Authentication and Session Management
+
+Every staff member must have an individual username and password.
+
+Login is mandatory.
+
+Requirements:
+
+- Username/password authentication.
+- Password hashing using Argon2 or bcrypt.
+- JWT access token.
+- Access token expiration: 24 hours.
+- No refresh token system is required for the initial version.
+- Logout functionality.
+- Automatically redirect to login when the token expires.
+- Secure token handling.
+- Session tracking.
+- Record login and logout timestamps.
+- Record the last login time.
+- Admin can deactivate accounts.
+- Prevent deactivated users from accessing the application.
+
+Since the application operates on a local intranet, keep authentication simple but do not remove essential security protections.
+
+Never store plaintext passwords.
+
+---
+
+# 5. Restaurant Floor and Table Management
+
+Admin can configure the restaurant layout.
+
+Example:
+
+Restaurant:
+- Ground Floor
+- First Floor
+
+Each floor can have multiple tables.
+
+Example:
+
+Ground Floor:
+- Table 1 – 2 Seats
+- Table 2 – 4 Seats
+- Table 3 – 6 Seats
+- Table 4 – 8 Seats
+
+First Floor:
+- Table 5 – 2 Seats
+- Table 6 – 4 Seats
+- Table 7 – 8 Seats
+
+Requirements:
+
+- Add floors.
+- Edit floors.
+- Delete floors if unused.
+- Add tables.
+- Edit table details.
+- Set seating capacity.
+- Activate/deactivate tables.
+- Display table status.
+- Track occupied and available tables.
+- Support multiple simultaneous orders for different tables.
+
+Use visual floor-wise table management.
+
+---
+
+# 6. Menu Management
+
+Admin manages the complete restaurant menu.
+
+Menu structure:
+
+- Food Categories.
+- Food Items.
+- Item Description.
+- Item Image.
+- Price.
+- Active/Inactive status.
+- Availability status.
+
+Example categories:
+
+- Starters
+- Biryani
+- Main Course
+- Snacks
+- Beverages
+- Desserts
+
+Admin can:
+
+- Add food categories.
+- Edit categories.
+- Delete unused categories.
+- Add food items.
+- Update item prices.
+- Update descriptions.
+- Upload images.
+- Enable/disable food items.
+
+Chef controls daily food availability.
+
+Example:
+
+Chicken Biryani:
+- Available
+- Sold Out
+
+When the chef marks Chicken Biryani as Sold Out, the change must immediately reflect in the service staff's application.
+
+Staff must not be able to order unavailable food items.
+
+Availability updates should be logged with user and timestamp information.
+
+---
+
+# 7. Service Boy / Staff Module
+
+Staff members use the application from their mobile devices.
+
+The staff dashboard must be mobile-first.
+
+Workflow:
+
+1. Staff logs in.
+2. Opens the floor selection.
+3. Selects the appropriate table.
+4. Views the available menu.
+5. Selects food items.
+6. Specifies quantities.
+7. Adds special instructions if needed.
+8. Reviews the order.
+9. Submits the order.
+
+Once submitted:
+
+- Order is saved in PostgreSQL.
+- Kitchen receives a real-time notification.
+- The order is assigned to the selected table.
+- Staff can track the order status.
+
+Staff must see:
+
+- Available food items.
+- Sold-out food items.
+- Current table.
+- Current orders.
+- Kitchen preparation status.
+- Ready-to-serve notifications.
+
+Staff must not have access to unauthorized admin or manager functions.
+
+## Staff Performance Dashboard
+
+Display:
+
+- Today's total orders received.
+- Total food items ordered.
+- Total food items delivered.
+- Total completed orders.
+- Total bills generated.
+- Total tables served.
+- Pending deliveries.
+- Completed deliveries.
+
+All statistics must be based on actual database records.
+
+---
+
+# 8. Chef / Kitchen Management Module
+
+Chefs use a dedicated kitchen dashboard.
+
+Whenever staff submits an order, the kitchen receives a real-time notification.
+
+Kitchen workflow:
+
+1. New Order Received.
+2. Chef Accepts Order.
+3. Chef Starts Preparation.
+4. Chef Completes Preparation.
+5. Food Status Changes to Ready.
+6. Staff Receives Notification.
+
+Order statuses:
+
+- Pending
+- Accepted
+- Preparing
+- Ready
+- Delivered
+- Cancelled
+
+Important:
+
+Each food item within an order must have its own preparation status.
+
+For example:
+
+Table 3:
+- Chicken Biryani – Ready.
+- Butter Naan – Preparing.
+- Paneer Curry – Pending.
+
+When one item becomes ready, staff should receive a notification for that particular item.
+
+Chef can also:
+
+- Update food availability.
+- Mark food items as Sold Out.
+- Mark food items as Available.
+- View incoming orders.
+- View pending preparation items.
+- View completed food items.
+
+## Chef Performance Dashboard
+
+Display:
+
+- Today's total orders accepted.
+- Total food items prepared.
+- Total food items completed.
+- Currently preparing items.
+- Pending items.
+- Average preparation time.
+- Completed orders.
+- Individual chef performance.
+
+Track which chef prepared each food item.
+
+If multiple chefs work on different items, track their individual contributions accurately.
+
+---
+
+# 9. Manager Module
+
+Manager is responsible for restaurant operations and financial monitoring.
+
+Manager dashboard must display:
+
+### Revenue
+- Today's revenue.
+- Weekly revenue.
+- Monthly revenue.
+- Total revenue.
+- Total bills.
+- Average bill value.
+
+### Orders
+- Total orders.
+- Pending orders.
+- Completed orders.
+- Cancelled orders.
+
+### Staff Performance
+- Staff-wise orders received.
+- Staff-wise food items delivered.
+- Staff-wise completed bills.
+- Tables served by each staff member.
+
+### Chef Performance
+- Chef-wise food items prepared.
+- Chef-wise completed items.
+- Average preparation time.
+- Pending kitchen orders.
+
+### Restaurant Overview
+- Total floors.
+- Total tables.
+- Occupied tables.
+- Available tables.
+- Total menu items.
+- Currently unavailable food items.
+
+Manager can:
+
+- Monitor orders.
+- View bills.
+- Generate bills.
+- View payment information.
+- Print bills.
+- View daily, weekly, and monthly reports.
+- Monitor staff performance.
+- Monitor chef performance.
+
+Manager must not automatically receive Admin permissions.
+
+---
+
+# 10. Billing and Payment Management
+
+When all ordered food items are ready/delivered and the customer requests the bill:
+
+1. Staff selects the table.
+2. Staff requests bill generation.
+3. Manager receives a real-time notification.
+4. Manager reviews the complete order.
+5. Manager generates the final bill.
+6. System calculates the total amount.
+7. Manager prints the bill.
+8. Printed bill is handed to the customer.
+
+Billing must include:
+
+- Restaurant name.
+- Restaurant logo.
+- Bill number.
+- Date and time.
+- Table number.
+- Food item names.
+- Quantities.
+- Individual item prices.
+- Subtotal.
+- Configurable taxes.
+- Discounts, if applicable.
+- Grand total.
+- Payment method.
+- Payment status.
+
+Support:
+
+- Cash.
+- UPI.
+- Card.
+- Other payment methods.
+
+This is an initial billing system; no external payment gateway integration is required.
+
+Implement proper bill generation and printable invoice layouts.
+
+Prevent duplicate bill generation and duplicate payment recording.
+
+---
+
+# 11. Dashboard Requirements
+
+Create separate dashboards for:
+
+1. Admin.
+2. Sub Admin.
+3. Manager.
+4. Chef.
+5. Service Boy.
+
+Each dashboard must display only the modules and information authorized for that role.
+
+## Admin Dashboard
+
+Show:
+
+- Total managers.
+- Total staff members.
+- Total chefs.
+- Total floors.
+- Total tables.
+- Today's revenue.
+- Weekly revenue.
+- Monthly revenue.
+- Total orders.
+- Total food items prepared.
+- Total food items delivered.
+- Staff performance comparison.
+- Chef performance comparison.
+- Recent activities.
+
+## Manager Dashboard
+
+Show:
+
+- Today's revenue.
+- Weekly revenue.
+- Monthly revenue.
+- Total bills.
+- Total orders.
+- Chef performance.
+- Staff performance.
+- Pending kitchen orders.
+- Ready food items.
+- Restaurant occupancy.
+
+## Chef Dashboard
+
+Show:
+
+- New orders.
+- Pending items.
+- Preparing items.
+- Completed items.
+- Today's preparation count.
+- Average preparation time.
+- Food availability management.
+
+## Service Boy Dashboard
+
+Show:
+
+- Today's orders received.
+- Today's food items ordered.
+- Today's food items delivered.
+- Today's completed tables.
+- Today's bills completed.
+- Pending deliveries.
+- Ready food notifications.
+
+All dashboards must have meaningful visual charts, statistics, and recent activity sections.
+
+Do not use dummy numbers in production dashboards.
+
+---
+
+# 12. Application Settings / More Settings
+
+Create a dynamic application configuration module.
+
+Admin should control application branding and configuration without modifying code.
+
+Store configurable values in a PostgreSQL settings table using key-value configuration or a well-structured settings schema.
+
+Include:
+
+### Branding
+- Application Name.
+- Restaurant Name.
+- Brand Name.
+- Logo.
+- Logo Width.
+- Logo Height.
+- Favicon.
+- Favicon Size.
+- Primary Color.
+- Secondary Color.
+- Theme Settings.
+
+### Website Metadata
+- Meta Title.
+- Meta Description.
+- Meta Keywords.
+- Author.
+- Application Version.
+
+### Layout Settings
+- Sidebar Width.
+- Sidebar Logo.
+- Sidebar Navigation Labels.
+- Header Configuration.
+- Footer Configuration.
+
+### Restaurant Settings
+- Restaurant Address.
+- Contact Number.
+- GST Number.
+- Currency.
+- Tax Configuration.
+- Bill Footer Text.
+
+### Other Settings
+- Date Format.
+- Time Format.
+- Notification Preferences.
+- Session Configuration.
+
+Settings must be dynamically loaded and applied throughout the application.
+
+Use sensible defaults.
+
+Validate uploaded images and configuration values.
+
+---
+
+# 13. Activity Logs and Performance Tracking
+
+Every user must have a unique account.
+
+Track important activities, including:
+
+- Login.
+- Logout.
+- Order creation.
+- Order updates.
+- Order acceptance.
+- Food preparation.
+- Food completion.
+- Food delivery.
+- Menu availability changes.
+- Bill generation.
+- Payment recording.
+- User management changes.
+- Settings changes.
+
+Each activity should record:
+
+- User ID.
+- Username.
+- Role.
+- Action.
+- Related record ID.
+- Timestamp.
+- Relevant details.
+
+Create an Admin Activity Log module.
+
+Manager should have access to operational performance reports based on permissions.
+
+Use audit logs to calculate staff and chef performance.
+
+Do not calculate performance using unreliable frontend counters.
+
+---
+
+# 14. Real-Time Notifications
+
+Implement WebSocket-based notifications.
+
+Notifications should be role-specific.
+
+Examples:
+
+Staff submits order:
+→ Chef receives notification.
+
+Chef accepts order:
+→ Staff can see the updated status.
+
+Chef completes food:
+→ Staff receives notification.
+
+Staff requests bill:
+→ Manager receives notification.
+
+Manager generates bill:
+→ Staff can see the bill status.
+
+Admin updates menu availability:
+→ All relevant connected users receive the update.
+
+Handle reconnects and missed events properly.
+
+Persist important notifications in PostgreSQL.
+
+---
+
+# 15. Database Design
+
+Design a normalized PostgreSQL database.
+
+Create appropriate tables for:
+
+- users
+- roles
+- permissions
+- role_permissions
+- user_roles
+- floors
+- tables
+- food_categories
+- food_items
+- food_availability
+- orders
+- order_items
+- kitchen_tasks
+- bills
+- bill_items
+- payments
+- notifications
+- activity_logs
+- application_settings
+- restaurant_settings
+- sessions
+
+Add any additional tables required for a clean and scalable architecture.
+
+Requirements:
+
+- UUID primary keys.
+- Proper foreign keys.
+- Appropriate indexes.
+- Created_at and updated_at timestamps.
+- Soft deletion where appropriate.
+- Database migrations.
+- Transactions for critical operations.
+- Proper decimal precision for financial values.
+
+Do not store calculated totals as unverified values from the frontend.
+
+---
+
+# 16. UI/UX Standards
+
+The application must look and feel like a professional commercial SaaS product.
+
+Follow modern enterprise dashboard design principles.
+
+Requirements:
+
+- Consistent typography.
+- Consistent font sizes.
+- Consistent spacing.
+- Consistent colors.
+- Reusable components.
+- Responsive layouts.
+- Mobile-first staff interface.
+- Desktop-friendly admin and manager interfaces.
+- Accessible forms.
+- Proper validation messages.
+- Loading indicators.
+- Empty states.
+- Error states.
+- Confirmation dialogs.
+- Toast notifications.
+- Search and filtering.
+- Pagination.
+- Tables with sorting.
+
+Use a consistent design system throughout the application.
+
+The sidebar, header, buttons, forms, cards, tables, modals, and dashboards must follow the same design standards.
+
+Do not create random layouts for individual modules.
+
+The restaurant staff should be able to operate the application quickly with minimal clicks.
+
+---
+
+# 17. Backend Coding Standards
+
+Follow professional NestJS architecture.
+
+Use feature-based modules.
+
+Example:
+
+src/
+  auth/
+  users/
+  roles/
+  permissions/
+  floors/
+  tables/
+  menu/
+  orders/
+  kitchen/
+  billing/
+  payments/
+  notifications/
+  reports/
+  dashboards/
+  settings/
+  activity-logs/
+  common/
+  database/
+
+Requirements:
+
+- Controllers should only handle HTTP requests.
+- Business logic belongs in services.
+- DTOs for request validation.
+- Guards for authorization.
+- Reusable decorators.
+- Centralized exception handling.
+- Proper dependency injection.
+- Repository-based database access.
+- Swagger documentation.
+- Environment-based configuration.
+- No hardcoded secrets.
+- Consistent API response formats.
+
+---
+
+# 18. Frontend Coding Standards
+
+Use feature-based React architecture.
+
+Example:
+
+src/
+  app/
+  assets/
+  components/
+  layouts/
+  features/
+    auth/
+    dashboard/
+    users/
+    roles/
+    floors/
+    tables/
+    menu/
+    orders/
+    kitchen/
+    billing/
+    payments/
+    reports/
+    settings/
+    activity-logs/
+  hooks/
+  services/
+  routes/
+  permissions/
+  utils/
+  types/
+
+Requirements:
+
+- Protected routes.
+- Permission-based navigation.
+- Reusable form components.
+- Reusable table components.
+- Centralized API client.
+- Centralized error handling.
+- Typed API responses.
+- Proper state management.
+- No unnecessary duplicate code.
+- No giant components.
+- No business logic inside presentation-only components.
+
+---
+
+# 19. Testing Requirements
+
+Testing is mandatory.
+
+Implement:
+
+### Backend
+- Unit tests.
+- Service tests.
+- Controller tests.
+- Authentication tests.
+- Permission tests.
+- Order workflow tests.
+- Billing tests.
+- Database integration tests.
+
+### Frontend
+- Component tests.
+- Form validation tests.
+- Role-based navigation tests.
+- Permission visibility tests.
+- Dashboard tests.
+- Order workflow tests.
+
+### End-to-End Testing
+
+Test the complete restaurant workflow:
+
+1. Admin creates floors.
+2. Admin creates tables.
+3. Admin adds menu items.
+4. Admin creates users.
+5. Admin assigns roles.
+6. Staff logs in.
+7. Staff selects a table.
+8. Staff creates an order.
+9. Chef receives the order.
+10. Chef accepts the order.
+11. Chef prepares food.
+12. Chef marks items as ready.
+13. Staff receives notification.
+14. Staff delivers food.
+15. Staff requests a bill.
+16. Manager generates the bill.
+17. Payment is recorded.
+18. Manager views revenue reports.
+19. Admin views staff and chef performance.
+
+Test unauthorized access, duplicate operations, invalid data, and concurrent order updates.
+
+---
+
+# 20. Documentation
+
+Create professional documentation.
+
+Required files:
+
+- README.md
+- PROJECT_ARCHITECTURE.md
+- DATABASE_SCHEMA.md
+- API_DOCUMENTATION.md
+- AUTHENTICATION_AND_AUTHORIZATION.md
+- ROLE_PERMISSION_MATRIX.md
+- SETUP_GUIDE.md
+- DEPLOYMENT_GUIDE.md
+- TESTING_GUIDE.md
+- USER_GUIDE.md
+
+Include:
+
+- Project setup instructions.
+- Environment variables.
+- Database setup.
+- Migration commands.
+- Seed commands.
+- Development commands.
+- Production build commands.
+- API endpoint documentation.
+- Role and permission explanations.
+- Deployment instructions.
+
+A new developer should be able to understand and run the project using the documentation.
+
+---
+
+# 21. Deployment and Intranet Requirements
+
+The application must run inside the restaurant's local network.
+
+Example:
+
+Restaurant server:
+192.168.1.100
+
+Admin/Manager desktop:
+http://192.168.1.100
+
+Staff mobile devices:
+http://192.168.1.100
+
+Chef mobile devices:
+http://192.168.1.100
+
+Requirements:
+
+- Local network deployment.
+- Static LAN IP support.
+- Backend accessible through LAN.
+- PostgreSQL accessible only to the backend.
+- Frontend served through a local web server or reverse proxy.
+- Docker Compose for deployment.
+- Persistent PostgreSQL storage.
+- Automatic restart after server reboot.
+- Local backup and restore functionality.
+- No dependency on external cloud services for normal operations.
+
+The system should continue operating when external internet connectivity is unavailable.
+
+---
+
+# 22. Important Business Rules
+
+1. A staff member cannot order a food item marked Sold Out.
+2. Only authorized users can change food availability.
+3. Each order must belong to a valid restaurant table.
+4. Every order item must maintain its own kitchen status.
+5. Every prepared food item must be associated with the responsible chef.
+6. Every delivered food item must be associated with the responsible staff member.
+7. A bill must contain the actual ordered items and quantities.
+8. Prevent duplicate bill generation.
+9. Prevent duplicate payment recording.
+10. Revenue reports must be calculated using actual completed payments.
+11. Role permissions must be checked on the backend.
+12. Deactivated users cannot log in.
+13. All important operations must be recorded in activity logs.
+14. Menu availability changes must be reflected in real time.
+15. Preserve historical order and bill records even when menu items are deactivated.
+
+---
+
+# 23. Development Execution Instructions
+
+Do not simply generate a few pages and claim the application is complete.
+
+Follow this development sequence:
+
+**Phase 1:** Project architecture and initial setup.
+
+**Phase 2:** PostgreSQL schema, migrations, and seed data.
+
+**Phase 3:** Authentication and authorization.
+
+**Phase 4:** Dynamic roles and permission management.
+
+**Phase 5:** Restaurant floors and table management.
+
+**Phase 6:** Menu and food availability management.
+
+**Phase 7:** Staff ordering workflow.
+
+**Phase 8:** Kitchen management and real-time notifications.
+
+**Phase 9:** Billing and payment management.
+
+**Phase 10:** Admin, Manager, Chef, and Staff dashboards.
+
+**Phase 11:** Reports, activity logs, and performance tracking.
+
+**Phase 12:** Application settings and branding.
+
+**Phase 13:** Complete testing and bug fixing.
+
+**Phase 14:** Documentation and Docker-based LAN deployment.
+
+After each phase:
+
+- Verify the implementation.
+- Run relevant tests.
+- Fix errors.
+- Update documentation.
+- Ensure existing functionality is not broken.
+
+Maintain a development checklist.
+
+Do not leave important modules as TODOs or placeholders.
+
+Do not use hardcoded dummy data as a replacement for backend functionality.
+
+If a requirement is ambiguous, choose a sensible enterprise-grade default and document the decision.
+
+---
+
+# FINAL EXPECTATION
+
+Deliver a complete, maintainable, scalable Restaurant Management System with:
+
+- Latest stable React.
+- Latest stable NestJS.
+- PostgreSQL.
+- TypeScript.
+- JWT authentication.
+- Dynamic RBAC.
+- Real-time WebSockets.
+- Role-specific dashboards.
+- Restaurant floor and table management.
+- Menu management.
+- Staff ordering.
+- Kitchen workflow.
+- Billing and payments.
+- Performance analytics.
+- Activity tracking.
+- Dynamic application settings.
+- Automated tests.
+- Complete documentation.
+- Docker-based intranet deployment.
+
+**Quality is more important than development speed.**
+
+Think like an experienced software architect. Follow industry-standard coding practices, maintain clean architecture, and ensure that every module works correctly with the others.
+
+Build this as a real commercial software product, not a demo project.

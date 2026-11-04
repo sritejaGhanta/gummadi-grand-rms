@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gummadi Grand Restaurant Eluru - Complete Client Demo (Telugu)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", sans-serif; }
+    body {
+      background: radial-gradient(circle at top, #1e293b, #090d16);
+      color: #f8fafc;
+      min-height: 100vh;
+      padding: 30px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1100px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .telugu-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 15px;
+    }
+    .video-wrapper {
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      margin-bottom: 24px;
+    }
+    video {
+      width: 100%;
+      height: auto;
+      display: block;
+      outline: none;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 25px rgba(16, 185, 129, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+    .scenes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .scene-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .scene-card:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: #f59e0b;
+      transform: translateY(-2px);
+    }
+    .scene-num {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .scene-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .scene-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .scene-shots {
+      font-size: 11px;
+      color: #34d399;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    .scene-time {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 6px;
+      font-family: monospace;
+    }
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">🎙️ Official Telugu Client Presentation (1080p HD • Dynamic Visual Transitions)</span>
+      <h1>Gummadi Grand Restaurant Eluru</h1>
+      <div class="telugu-sub">గుమ్మడి గ్రాండ్ రెస్టారెంట్ ఏలూరు — లైవ్ డెమో వీడియో</div>
+      <p class="subtitle">వాయిస్ మరియు టాపిక్‌కు తగినట్లుగా 19 డైనమిక్ స్క్రీన్ షాట్స్ & ఫీచర్స్ ట్రాన్సిషన్స్</p>
+    </header>
+
+    <div class="video-wrapper">
+      <video id="demoVideo" controls playsinline preload="auto">
+        <source src="restaurant_rms_client_demo_telugu.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <div class="actions">
+      <a href="restaurant_rms_client_demo_telugu.mp4" download class="btn btn-primary">
+        📥 Download Video (MP4 - 4.4MB)
+      </a>
+      <a href="download.html" class="btn btn-secondary">
+        📱 Download Android APK
+      </a>
+      <a href="http://192.168.20.131:5173" target="_blank" class="btn btn-secondary">
+        🌐 Open POS Web App
+      </a>
+    </div>
+
+    <h2 style="font-size: 18px; margin-bottom: 16px; color: #e2e8f0;">📑 వీడియోలోని ముఖ్య విభాగాలు & డైనమిక్ సీన్స్ (Click to jump):</h2>
+    <div class="scenes-grid">
+      <div class="scene-card" onclick="seekTo(0)">
+        <span class="scene-num">Scene 1 • 0:00</span>
+        <div class="scene-title">గుమ్మడి గ్రాండ్ పరిచయం & లాగిన్</div>
+        <div class="scene-desc">గోల్డెన్ క్రెస్ట్ బ్రాండ్ కార్డ్ & రోల్-బేస్డ్ లాగిన్ స్క్రీన్.</div>
+        <div class="scene-shots">📸 2 Shots: Welcome Splash → RBAC Login</div>
+        <div class="scene-time">Duration: 19s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(19)">
+        <span class="scene-num">Scene 2 • 0:19</span>
+        <div class="scene-title">Admin Dashboard & Live Telemetry</div>
+        <div class="scene-desc">నేటి రాబడి (Today's Revenue), ఆర్డర్లు & డైనింగ్ ఆక్యుపెన్సీ.</div>
+        <div class="scene-shots">📸 2 Shots: KPI Cards → Scrolled Operations</div>
+        <div class="scene-time">Duration: 16s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(35)">
+        <span class="scene-num">Scene 3 • 0:35</span>
+        <div class="scene-title">ఫ్లోర్ ప్లాన్ & ఇంటరాక్టివ్ టేబుల్స్</div>
+        <div class="scene-desc">గ్రౌండ్ ఫ్లోర్ లేఅవుట్ & కలర్ కోడింగ్ (ఖాళీ, ఆక్యుపైడ్, బిల్లింగ్).</div>
+        <div class="scene-shots">📸 2 Shots: Floor Grid → Status Legend</div>
+        <div class="scene-time">Duration: 14s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(49)">
+        <span class="scene-num">Scene 4 • 0:49</span>
+        <div class="scene-title">మొబైల్ POS ఆర్డరింగ్ & స్మార్ట్ కార్ట్</div>
+        <div class="scene-desc">డిజిటల్ మెనూ, వెజ్/నాన్-వెజ్ ఫిల్టర్స్, స్పెషల్ కుకింగ్ నోట్స్.</div>
+        <div class="scene-shots">📸 2 Shots: Menu Catalog → Cart & KOT</div>
+        <div class="scene-time">Duration: 14s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(63)">
+        <span class="scene-num">Scene 5 • 1:03</span>
+        <div class="scene-title">చెఫ్ కిచెన్ డిస్ప్లే (KDS)</div>
+        <div class="scene-desc">లైవ్ KOT ఆర్డర్ టికెట్లు, ప్రిపరేషన్ టైమర్స్ & సోల్డ్ అవుట్ స్విచ్.</div>
+        <div class="scene-shots">📸 3 Shots: Live Tickets → Ready to Serve → Sold Out</div>
+        <div class="scene-time">Duration: 18s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(81)">
+        <span class="scene-num">Scene 6 • 1:21</span>
+        <div class="scene-title">ఫుడ్ సర్వింగ్ & బిల్ రిక్వెస్ట్</div>
+        <div class="scene-desc">వెయిటర్‌కు రెడీ టు సర్వ్ అలర్ట్ & 1-ట్యాప్‌తో టేబుల్ బిల్ రిక్వెస్ట్.</div>
+        <div class="scene-shots">📸 2 Shots: Serving Alert → Bill Request</div>
+        <div class="scene-time">Duration: 15s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(96)">
+        <span class="scene-num">Scene 7 • 1:36</span>
+        <div class="scene-title">మేనేజర్ బిల్లింగ్ & GST ఇన్వాయిస్</div>
+        <div class="scene-desc">గుమ్మడి గ్రాండ్ అధికారిక టాక్స్ ఇన్వాయిస్, UPI QR & పేమెంట్.</div>
+        <div class="scene-shots">📸 3 Shots: Bill Queue → Tax Invoice → Settlement</div>
+        <div class="scene-time">Duration: 17s</div>
+      </div>
+      <div class="scene-card" onclick="seekTo(113)">
+        <span class="scene-num">Scene 8 • 1:53</span>
+        <div class="scene-title">డైనమిక్ బ్రాండింగ్ & మొబైల్ సపోర్ట్</div>
+        <div class="scene-desc">లోగో, కలర్ థీమ్స్ కస్టమైజర్ & వెబ్ + ఆండ్రాయిడ్ మొబైల్ ప్రదర్శన.</div>
+        <div class="scene-shots">📸 3 Shots: Theme Settings → Live Reflection → Multi-Device</div>
+        <div class="scene-time">Duration: 17s</div>
+      </div>
+    </div>
+
+    <footer>
+      Gummadi Grand Restaurant Eluru • Enterprise Intranet System • Client Presentation Video
+    </footer>
+  </div>
+
+  <script>
+    const video = document.getElementById('demoVideo');
+    function seekTo(seconds) {
+      video.currentTime = seconds;
+      video.play();
+      window.scrollTo({ top: video.getBoundingClientRect().top + window.scrollY - 30, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #1e293b 0%, #090d16 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .grid-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(245, 158, 11, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+    .glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(40px);
+    }
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 8px 24px;
+      border-radius: 9999px;
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+    .logo-box {
+      width: 130px;
+      height: 130px;
+      margin-bottom: 20px;
+      z-index: 10;
+      filter: drop-shadow(0 15px 30px rgba(245, 158, 11, 0.4));
+    }
+    h1 {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #ffffff 40%, #fbbf24 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      z-index: 10;
+      text-align: center;
+    }
+    .telugu-sub {
+      font-size: 38px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 14px;
+      z-index: 10;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .tagline {
+      font-size: 22px;
+      color: #94a3b8;
+      margin-bottom: 48px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+    .modules {
+      display: flex;
+      gap: 20px;
+      z-index: 10;
+    }
+    .module-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 22px 28px;
+      text-align: center;
+      width: 220px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border-top: 3px solid #f59e0b;
+    }
+    .module-card .icon { font-size: 36px; margin-bottom: 10px; }
+    .module-card .name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .module-card .desc { font-size: 12px; color: #94a3b8; }
+    .footer-bar {
+      position: absolute;
+      bottom: 24px;
+      display: flex;
+      gap: 30px;
+      color: #64748b;
+      font-size: 14px;
+      letter-spacing: 1px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-pattern"></div>
+  <div class="glow"></div>
+
+  <div class="badge-top">
+    ⚡ Enterprise Intranet Restaurant Operating System • Zero Latency
+  </div>
+
+  <svg class="logo-box" viewBox="0 0 200 200">
+    <defs>
+      <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fbbf24" />
+        <stop offset="50%" stop-color="#f59e0b" />
+        <stop offset="100%" stop-color="#d97706" />
+      </linearGradient>
+    </defs>
+    <circle cx="100" cy="100" r="92" fill="#090d16" stroke="url(#gold)" stroke-width="5"/>
+    <circle cx="100" cy="100" r="82" fill="none" stroke="url(#gold)" stroke-width="1.5" stroke-dasharray="4,4"/>
+    <path d="M75 55 L100 40 L125 55 L120 70 L80 70 Z" fill="url(#gold)"/>
+    <text x="100" y="122" font-size="52" font-family="'Cinzel', serif, sans-serif" font-weight="900" fill="url(#gold)" text-anchor="middle" letter-spacing="2">GG</text>
+    <text x="100" y="148" font-size="12" font-family="sans-serif" font-weight="700" fill="#f8fafc" text-anchor="middle" letter-spacing="3">GUMMADI GRAND</text>
+    <text x="100" y="165" font-size="10" font-family="sans-serif" font-weight="600" fill="#fbbf24" text-anchor="middle" letter-spacing="4">ELURU</text>
+  </svg>
+
+  <h1>GUMMADI GRAND RESTAURANT</h1>
+  <div class="telugu-sub">గుమ్మడి గ్రాండ్ రెస్టారెంట్ ఏలూరు • లైవ్ డెమో</div>
+  <div class="tagline">Fine Dining & Luxury Banquet • Full-Stack Intranet POS</div>
+
+  <div class="modules">
+    <div class="module-card">
+      <div class="icon">👑</div>
+      <div class="name">Admin Tower</div>
+      <div class="desc">Live Revenue & Telemetry</div>
+    </div>
+    <div class="module-card">
+      <div class="icon">🍽️</div>
+      <div class="name">Waiter POS</div>
+      <div class="desc">Floor Plan & Table Orders</div>
+    </div>
+    <div class="module-card">
+      <div class="icon">🍳</div>
+      <div class="name">Chef KDS</div>
+      <div class="desc">Paperless Cooking Tickets</div>
+    </div>
+    <div class="module-card">
+      <div class="icon">🧾</div>
+      <div class="name">Billing Desk</div>
+      <div class="desc">GST Invoice & UPI QR</div>
+    </div>
+    <div class="module-card">
+      <div class="icon">📱</div>
+      <div class="name">Mobile APK</div>
+      <div class="desc">Android Handheld Flow</div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <span>📍 Powerpet, Eluru, AP</span>
+    <span>•</span>
+    <span>⚡ 100% Offline LAN Network</span>
+    <span>•</span>
+    <span>🔒 Role-Based Permissions (RBAC)</span>
+  </div>
+</body>
+</html>
+

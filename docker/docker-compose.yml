@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: rms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rms_user
+      POSTGRES_PASSWORD: rms_password_secure123
+      POSTGRES_DB: rms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - rms_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rms_user -d rms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rms_pg_data:
+    name: rms_pg_data

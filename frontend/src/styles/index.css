@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Glassmorphism and custom effects */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #273549;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d97706;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+/* ========================================================
+   DYNAMIC APPLICATION BRANDING & THEME COLOR ACCENTS
+   ======================================================== */
+:root {
+  --theme-primary: #f59e0b;
+  --theme-primary-rgb: 245, 158, 11;
+  --theme-primary-hover: #d97706;
+}
+
+.bg-amber-500,
+.bg-amber-600,
+.bg-brand-500 {
+  background-color: var(--theme-primary) !important;
+}
+
+.hover\:bg-amber-400:hover,
+.hover\:bg-amber-500:hover,
+.hover\:bg-amber-600:hover,
+.hover\:bg-brand-600:hover {
+  background-color: var(--theme-primary-hover) !important;
+}
+
+.text-amber-400,
+.text-amber-500,
+.text-amber-600,
+.text-brand-400,
+.text-brand-500 {
+  color: var(--theme-primary) !important;
+}
+
+.border-amber-500,
+.border-brand-500 {
+  border-color: var(--theme-primary) !important;
+}
+
+.border-amber-500\/10,
+.border-amber-500\/20,
+.border-amber-500\/30,
+.border-amber-500\/40,
+.border-amber-500\/50,
+.border-amber-400\/30 {
+  border-color: rgba(var(--theme-primary-rgb), 0.28) !important;
+}
+
+.bg-amber-500\/5,
+.bg-amber-500\/10,
+.bg-amber-500\/20,
+.bg-brand-500\/10 {
+  background-color: rgba(var(--theme-primary-rgb), 0.15) !important;
+}
+
+.shadow-amber-500\/10,
+.shadow-amber-500\/20,
+.shadow-amber-500\/30 {
+  --tw-shadow-color: rgba(var(--theme-primary-rgb), 0.25) !important;
+  box-shadow: 0 10px 15px -3px rgba(var(--theme-primary-rgb), 0.25), 0 4px 6px -4px rgba(var(--theme-primary-rgb), 0.15) !important;
+}
+
+.from-amber-600,
+.from-amber-500 {
+  --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(var(--theme-primary-rgb), 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-amber-400,
+.to-amber-500 {
+  --tw-gradient-to: var(--theme-primary-hover) var(--tw-gradient-to-position) !important;
+}
+
+.focus\:border-amber-500:focus {
+  border-color: var(--theme-primary) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary) !important;
+}

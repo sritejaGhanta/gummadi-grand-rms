@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "RMS Staff & Kitchen",
+    "slug": "rms-restaurant-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#090d16"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.royalfeast.rms",
+      "adaptiveIcon": {
+        "backgroundColor": "#d97706"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "39a919ee-ea46-4621-a080-6d74839ed75b"
+      }
+    }
+  }
+}
