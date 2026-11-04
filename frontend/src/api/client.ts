@@ -26,8 +26,10 @@ instance.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('rms_token');
       localStorage.removeItem('rms_user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const basePath = window.location.pathname.startsWith('/restaurant') ? '/restaurant' : '';
+      const loginPath = `${basePath}/login`;
+      if (window.location.pathname !== loginPath && window.location.pathname !== '/login') {
+        window.location.href = loginPath;
       }
     }
     const message =
