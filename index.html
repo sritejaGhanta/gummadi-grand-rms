@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gummadi Grand Restaurant Eluru - Operations Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", sans-serif; }
+    body {
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #090d16 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .logo-box {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 16px;
+      filter: drop-shadow(0 10px 20px rgba(245, 158, 11, 0.3));
+    }
+    h1 {
+      font-size: 34px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .telugu-sub {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5);
+    }
+    .card.primary { border-top: 4px solid #f59e0b; }
+    .card.video { border-top: 4px solid #10b981; }
+    .card.apk { border-top: 4px solid #3b82f6; }
+    .card.git { border-top: 4px solid #a855f7; }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(217, 119, 6, 0.35);
+    }
+    .btn-green {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(16, 185, 129, 0.35);
+    }
+    .btn-blue {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #a855f7, #9333ea);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(147, 51, 234, 0.35);
+    }
+    .info-section {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .info-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .cred-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .cred-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .cred-role { font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+    .cred-val { font-size: 13px; color: #38bdf8; font-family: monospace; font-weight: 700; margin-top: 4px; }
+
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-top">⚡ Live Operations & Deployment Center</div>
+      <svg class="logo-box" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fbbf24" />
+            <stop offset="50%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="92" fill="#090d16" stroke="url(#gold)" stroke-width="5"/>
+        <circle cx="100" cy="100" r="82" fill="none" stroke="url(#gold)" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <path d="M75 55 L100 40 L125 55 L120 70 L80 70 Z" fill="url(#gold)"/>
+        <text x="100" y="122" font-size="52" font-family="'Cinzel', serif, sans-serif" font-weight="900" fill="url(#gold)" text-anchor="middle" letter-spacing="2">GG</text>
+        <text x="100" y="148" font-size="12" font-family="sans-serif" font-weight="700" fill="#f8fafc" text-anchor="middle" letter-spacing="3">GUMMADI GRAND</text>
+        <text x="100" y="165" font-size="10" font-family="sans-serif" font-weight="600" fill="#fbbf24" text-anchor="middle" letter-spacing="4">ELURU</text>
+      </svg>
+      <h1>Gummadi Grand Restaurant Eluru</h1>
+      <div class="telugu-sub">పూర్తి రెస్టారెంట్ మేనేజ్‌మెంట్ ఆపరేటింగ్ సిస్టమ్</div>
+      <p class="subtitle">Web POS, Chef KDS, Manager Billing & Handheld Mobile Solution</p>
+    </header>
+
+    <div class="grid">
+      <!-- Web POS -->
+      <div class="card primary">
+        <div>
+          <div class="card-icon">🍽️</div>
+          <div class="card-title">Live Web POS & Admin</div>
+          <div class="card-desc">పూర్తి సిస్టమ్: అడ్మిన్ కంట్రోల్ టవర్, వైటర్ టేబుల్ POS, కిచెన్ KDS మరియు మేనేజర్ బిల్లింగ్.</div>
+        </div>
+        <a href="http://192.168.20.131:5173" target="_blank" class="btn btn-gold">
+          🚀 Open Web App
+        </a>
+      </div>
+
+      <!-- Demo Video -->
+      <div class="card video">
+        <div>
+          <div class="card-icon">🎬</div>
+          <div class="card-title">Client Demo Video</div>
+          <div class="card-desc">Full HD 1080p వీడియో విత్ ప్రొఫెషనల్ తెలుగు వాయిస్ ఓవర్ & 19 డైనమిక్ సీన్స్.</div>
+        </div>
+        <a href="demo_video.html" class="btn btn-green">
+          ▶️ Watch Video (Telugu)
+        </a>
+      </div>
+
+      <!-- Android APK -->
+      <div class="card apk">
+        <div>
+          <div class="card-icon">📱</div>
+          <div class="card-title">Download Android APK</div>
+          <div class="card-desc">వైటర్ మరియు కిచెన్ చెఫ్ కోసం ప్రత్యేక ఆండ్రాయిడ్ మొబైల్ అప్లికేషన్ (APK).</div>
+        </div>
+        <a href="gummadi-grand-restaurant.apk" download class="btn btn-blue">
+          ⬇️ Download APK (178MB)
+        </a>
+      </div>
+
+      <!-- GitHub Repo -->
+      <div class="card git">
+        <div>
+          <div class="card-icon">🐙</div>
+          <div class="card-title">GitHub Repository</div>
+          <div class="card-desc">పూర్తి సోర్స్ కోడ్ (Frontend, Backend, Mobile, Docker & Docs) గిట్‌హబ్‌లో అందుబాటులో ఉంది.</div>
+        </div>
+        <a href="https://github.com/sritejaGhanta/gummadi-grand-rms" target="_blank" class="btn btn-purple">
+          🌐 View on GitHub
+        </a>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-title">🔑 Default Staff Login Credentials</div>
+      <div class="cred-grid">
+        <div class="cred-card">
+          <div class="cred-role">👑 Admin (Full Access)</div>
+          <div class="cred-val">admin / admin123</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">🧾 Manager (Billing)</div>
+          <div class="cred-val">manager / manager123</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">🍽️ Waiter (POS & Tables)</div>
+          <div class="cred-val">waiter / waiter123</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-role">🍳 Chef (Kitchen KDS)</div>
+          <div class="cred-val">chef / chef123</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Gummadi Grand Restaurant Eluru • Powerpet, Eluru, Andhra Pradesh • All Rights Reserved 2026
+    </footer>
+  </div>
+</body>
+</html>
