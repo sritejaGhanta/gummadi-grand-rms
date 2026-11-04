@@ -1,4 +1,4 @@
-package com.royalfeast.rms
+package com.gummadigrand.rms
 
 import android.app.Application
 import android.content.res.Configuration

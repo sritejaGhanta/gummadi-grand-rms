@@ -30,8 +30,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('joinRoleRoom')
   handleJoinRoom(client: Socket, role: string) {
     if (role) {
-      client.join(`role:${role.toLowerCase()}`);
-      this.logger.log(`Client ${client.id} joined room: role:${role.toLowerCase()}`);
+      const r = role.toLowerCase();
+      client.join(`role:${r}`);
+      if (r === 'waiter') client.join('role:staff');
+      if (r === 'staff') client.join('role:waiter');
+      this.logger.log(`Client ${client.id} joined room: role:${r}`);
     }
   }
 

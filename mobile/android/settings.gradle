@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'RMS Staff & Kitchen'
+rootProject.name = 'Gummadi Grand RMS'
 
 dependencyResolutionManagement {
   versionCatalogs {
