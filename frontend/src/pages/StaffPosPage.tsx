@@ -586,7 +586,7 @@ export const StaffPosPage: React.FC = () => {
                         {isReady && (
                           <button
                             onClick={() => handleMarkDelivered(it.id)}
-                            className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-[10px] transition shadow-md shadow-emerald-500/20"
+                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[10px] transition shadow-md shadow-amber-500/20"
                           >
                             Mark Delivered
                           </button>
@@ -601,14 +601,14 @@ export const StaffPosPage: React.FC = () => {
                   <button
                     onClick={handleRequestBill}
                     disabled={isRequestingBill}
-                    className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition disabled:opacity-50"
+                    className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition disabled:opacity-50"
                   >
                     <Receipt className="w-3.5 h-3.5" />
                     {isRequestingBill ? 'Requesting...' : 'Request Bill Settlement'}
                   </button>
                 )}
                 {selectedTable.status === 'BILLING' && (
-                  <div className="w-full py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold text-xs flex items-center justify-center gap-1.5">
+                  <div className="w-full py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-semibold text-xs flex items-center justify-center gap-1.5">
                     <Receipt className="w-3.5 h-3.5" />
                     🧾 Bill requested — awaiting manager settlement
                   </div>

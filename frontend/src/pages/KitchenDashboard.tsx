@@ -760,7 +760,7 @@ export const KitchenDashboard: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => handleMarkReady(t.id)}
-                          className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition"
+                          className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           <span>Mark Ready for Waiter Pickup</span>
@@ -917,7 +917,7 @@ export const KitchenDashboard: React.FC = () => {
                     <div className="pt-1 border-t border-slate-800/80">
                       <button
                         onClick={() => handleMarkDelivered(t.id)}
-                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition"
+                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 transition"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
                         <span>Confirm Delivered to Table</span>

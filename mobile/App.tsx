@@ -1402,26 +1402,26 @@ function KDSCard({ task, onAction }: { task: any; onAction: (id: string, a: 'acc
       <Text style={S.kdsTime}>🕐 {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
       <View style={{ marginTop: 8 }}>
         {task.status === 'PENDING' && (
-          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: '#1d4ed8' }]}
+          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: C.accent }]}
             onPress={() => onAction(task.id, 'accept', task.foodItem?.name)}>
-            <Text style={S.kdsBtnTxt}>✓ Accept Order</Text>
+            <Text style={[S.kdsBtnTxt, { color: '#020617' }]}>✓ Accept Order</Text>
           </TouchableOpacity>
         )}
         {task.status === 'ACCEPTED' && (
-          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: '#7c3aed' }]}
+          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: C.accent }]}
             onPress={() => onAction(task.id, 'prepare', task.foodItem?.name)}>
-            <Text style={S.kdsBtnTxt}>🔥 Start Cooking</Text>
+            <Text style={[S.kdsBtnTxt, { color: '#020617' }]}>🔥 Start Cooking</Text>
           </TouchableOpacity>
         )}
         {task.status === 'PREPARING' && (
-          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: '#15803d' }]}
+          <TouchableOpacity style={[S.kdsBtn, { backgroundColor: C.accent }]}
             onPress={() => onAction(task.id, 'ready', task.foodItem?.name)}>
-            <Text style={S.kdsBtnTxt}>🔔 Mark Ready to Serve</Text>
+            <Text style={[S.kdsBtnTxt, { color: '#020617' }]}>🔔 Mark Ready to Serve</Text>
           </TouchableOpacity>
         )}
         {task.status === 'READY' && (
-          <View style={[S.kdsBtn, { backgroundColor: '#166534' }]}>
-            <Text style={S.kdsBtnTxt}>✅ Ready — Awaiting Waiter</Text>
+          <View style={[S.kdsBtn, { backgroundColor: C.accent + '25', borderWidth: 1, borderColor: C.accent }]}>
+            <Text style={[S.kdsBtnTxt, { color: C.accent }]}>✅ Ready — Awaiting Waiter</Text>
           </View>
         )}
       </View>
@@ -1568,10 +1568,10 @@ const S = StyleSheet.create({
   activeItemStatus: { color: C.txtSec, fontSize: 11, marginTop: 2 },
   txtReady: { color: C.success, fontWeight: '700' },
   txtDone: { color: C.info },
-  serveSmall: { backgroundColor: C.success, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  serveSmall: { backgroundColor: C.accent, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   serveSmallTxt: { color: '#020617', fontWeight: '800', fontSize: 11 },
-  reqBillBtn: { backgroundColor: C.info + '22', borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: C.info + '44' },
-  reqBillTxt: { color: C.info, fontWeight: '700', fontSize: 13 },
+  reqBillBtn: { backgroundColor: C.accent, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 10 },
+  reqBillTxt: { color: '#020617', fontWeight: '800', fontSize: 13 },
   billingNote: { backgroundColor: C.info + '15', borderRadius: 8, padding: 10, marginTop: 8 },
   billingNoteTxt: { color: C.info, fontSize: 12, textAlign: 'center' },
 
@@ -1612,7 +1612,7 @@ const S = StyleSheet.create({
   servDish: { color: C.txt, fontSize: 15, fontWeight: '700', marginBottom: 4 },
   servOrder: { color: C.txtMuted, fontSize: 11 },
   servNote: { color: '#fbbf24', fontSize: 11, marginTop: 4, fontStyle: 'italic' },
-  serveNowBtn: { backgroundColor: C.success, borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginTop: 12 },
+  serveNowBtn: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginTop: 12 },
   serveNowTxt: { color: '#020617', fontWeight: '800', fontSize: 13 },
   doneBox: { backgroundColor: C.info + '15', borderRadius: 8, padding: 10, marginTop: 8 },
   doneTxt: { color: C.info, fontSize: 12, textAlign: 'center' },

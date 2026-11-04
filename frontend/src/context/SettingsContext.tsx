@@ -42,6 +42,13 @@ const adjustBrightness = (hex: string, percent: number): string => {
   return `#${r}${g}${b}`;
 };
 
+const getContrastColor = (hex: string): string => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '#020617';
+  const yiq = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+  return yiq >= 140 ? '#020617' : '#ffffff';
+};
+
 const SettingsContext = createContext<SettingsContextType>({
   settings: {},
   currency: '₹',
@@ -90,6 +97,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
         const hoverHex = adjustBrightness(hex, -15);
         document.documentElement.style.setProperty('--theme-primary-hover', hoverHex);
+        const contrast = getContrastColor(hex);
+        document.documentElement.style.setProperty('--theme-primary-contrast', contrast);
       }
     }
 

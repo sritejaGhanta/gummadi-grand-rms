@@ -58,8 +58,51 @@
   --theme-primary: #f59e0b;
   --theme-primary-rgb: 245, 158, 11;
   --theme-primary-hover: #d97706;
+  --theme-primary-contrast: #020617;
   --theme-secondary: #0f172a;
   --theme-secondary-rgb: 15, 23, 42;
+}
+
+/* ALL ACTION & PRIMARY BUTTONS UNIFIED WITH THEME PRIMARY COLOR */
+button.bg-amber-500,
+button.bg-amber-600,
+button.bg-brand-500,
+button.bg-blue-600,
+button.bg-blue-500,
+button.bg-emerald-500,
+button.bg-emerald-600,
+a.bg-amber-500,
+a.bg-amber-600,
+a.bg-blue-600,
+a.bg-emerald-500 {
+  background-color: var(--theme-primary) !important;
+  color: var(--theme-primary-contrast, #020617) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+button.bg-amber-500 svg,
+button.bg-amber-600 svg,
+button.bg-blue-600 svg,
+button.bg-emerald-500 svg,
+button.bg-emerald-600 svg,
+a.bg-amber-500 svg,
+a.bg-blue-600 svg,
+a.bg-emerald-500 svg {
+  stroke: currentColor !important;
+}
+
+button.hover\:bg-amber-400:hover,
+button.hover\:bg-amber-500:hover,
+button.hover\:bg-amber-600:hover,
+button.hover\:bg-blue-500:hover,
+button.hover\:bg-blue-600:hover,
+button.hover\:bg-emerald-400:hover,
+button.hover\:bg-emerald-500:hover,
+a.hover\:bg-amber-400:hover,
+a.hover\:bg-blue-500:hover,
+a.hover\:bg-emerald-400:hover {
+  background-color: var(--theme-primary-hover) !important;
+  border-color: var(--theme-primary-hover) !important;
 }
 
 .bg-amber-500,
@@ -106,20 +149,31 @@
 
 .shadow-amber-500\/10,
 .shadow-amber-500\/20,
-.shadow-amber-500\/30 {
+.shadow-amber-500\/25,
+.shadow-amber-500\/30,
+.shadow-emerald-500\/20,
+.shadow-blue-600\/20 {
   --tw-shadow-color: rgba(var(--theme-primary-rgb), 0.25) !important;
   box-shadow: 0 10px 15px -3px rgba(var(--theme-primary-rgb), 0.25), 0 4px 6px -4px rgba(var(--theme-primary-rgb), 0.15) !important;
 }
 
 .from-amber-600,
-.from-amber-500 {
+.from-amber-500,
+.from-emerald-600,
+.from-emerald-500,
+.from-blue-600,
+.from-blue-500 {
   --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
   --tw-gradient-to: rgba(var(--theme-primary-rgb), 0) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 .to-amber-400,
-.to-amber-500 {
+.to-amber-500,
+.to-emerald-400,
+.to-emerald-500,
+.to-blue-400,
+.to-blue-500 {
   --tw-gradient-to: var(--theme-primary-hover) var(--tw-gradient-to-position) !important;
 }
 

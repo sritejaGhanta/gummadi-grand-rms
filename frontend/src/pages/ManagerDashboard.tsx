@@ -434,7 +434,7 @@ export const ManagerDashboard: React.FC = () => {
                         </button>
                         <button
                           onClick={() => openPayment(b)}
-                          className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/20 transition"
+                          className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/20 transition"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>Collect Payment</span>
@@ -844,7 +844,7 @@ export const ManagerDashboard: React.FC = () => {
 
           <button
             onClick={handleRecordPayment}
-            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-emerald-500/20 transition flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2"
           >
             <CheckCircle className="w-4 h-4" />
             <span>Confirm Settlement of {currency}{paymentAmount}</span>
