@@ -43,6 +43,7 @@ import {
   ShieldCheck,
   UserPlus,
   Star,
+  Palette,
   Check,
   AlertCircle,
   BarChart3,
@@ -270,6 +271,13 @@ export const AdminDashboard: React.FC = () => {
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh</span>
           </button>
+          <Link
+            to="/settings"
+            className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+          >
+            <Palette className="w-3.5 h-3.5" />
+            <span>Theme Colors</span>
+          </Link>
           <Link
             to="/roles-manage"
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition"

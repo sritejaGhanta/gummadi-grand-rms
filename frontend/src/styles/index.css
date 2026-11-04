@@ -58,6 +58,8 @@
   --theme-primary: #f59e0b;
   --theme-primary-rgb: 245, 158, 11;
   --theme-primary-hover: #d97706;
+  --theme-secondary: #0f172a;
+  --theme-secondary-rgb: 15, 23, 42;
 }
 
 .bg-amber-500,

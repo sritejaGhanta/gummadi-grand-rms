@@ -92,6 +92,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         document.documentElement.style.setProperty('--theme-primary-hover', hoverHex);
       }
     }
+
+    // 4. Dynamic Secondary / Background CSS Color Variables
+    if (data.secondary_color) {
+      const secHex = data.secondary_color.trim();
+      document.documentElement.style.setProperty('--theme-secondary', secHex);
+      const secRgb = hexToRgb(secHex);
+      if (secRgb) {
+        document.documentElement.style.setProperty(
+          '--theme-secondary-rgb',
+          `${secRgb.r}, ${secRgb.g}, ${secRgb.b}`,
+        );
+      }
+    }
   };
 
   const refreshSettings = async () => {

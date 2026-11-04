@@ -13,6 +13,9 @@ import {
   Upload,
   Globe,
   RefreshCw,
+  RotateCcw,
+  Eye,
+  Sliders,
 } from 'lucide-react';
 
 const THEME_PRESETS = [
@@ -47,11 +50,51 @@ const THEME_PRESETS = [
     badge: 'Bistro & Lounge',
   },
   {
+    name: 'Sunset Coral Ember',
+    primary: '#f97316',
+    secondary: '#1c1917',
+    badge: 'Grill & BBQ',
+  },
+  {
+    name: 'Ocean Cyan Lagoon',
+    primary: '#06b6d4',
+    secondary: '#082f49',
+    badge: 'Coastal & Seafood',
+  },
+  {
     name: 'Obsidian Platinum',
     primary: '#e2e8f0',
     secondary: '#090d16',
     badge: 'Monochrome Minimal',
   },
+];
+
+const QUICK_PRIMARY_SWATCHES = [
+  { name: 'Imperial Gold', hex: '#f59e0b' },
+  { name: 'Warm Amber', hex: '#d97706' },
+  { name: 'Sunset Orange', hex: '#f97316' },
+  { name: 'Ruby Crimson', hex: '#ef4444' },
+  { name: 'Rose Velvet', hex: '#f43f5e' },
+  { name: 'Hot Pink', hex: '#ec4899' },
+  { name: 'Amethyst Violet', hex: '#8b5cf6' },
+  { name: 'Indigo Night', hex: '#6366f1' },
+  { name: 'Sapphire Blue', hex: '#3b82f6' },
+  { name: 'Sky Azure', hex: '#0ea5e9' },
+  { name: 'Ocean Cyan', hex: '#06b6d4' },
+  { name: 'Mint Teal', hex: '#14b8a6' },
+  { name: 'Emerald Jade', hex: '#10b981' },
+  { name: 'Forest Green', hex: '#16a34a' },
+  { name: 'Citrus Lime', hex: '#84cc16' },
+  { name: 'Platinum Silver', hex: '#94a3b8' },
+];
+
+const QUICK_SECONDARY_SWATCHES = [
+  { name: 'Midnight Navy', hex: '#0f172a' },
+  { name: 'Deep Forest', hex: '#022c22' },
+  { name: 'Royal Violet', hex: '#1e1136' },
+  { name: 'Charcoal Noir', hex: '#18181b' },
+  { name: 'Pitch Dark', hex: '#020617' },
+  { name: 'Rich Bordeaux', hex: '#2e0b16' },
 ];
 
 const PRESET_LOGOS = [
@@ -213,24 +256,252 @@ export const SettingsPage: React.FC = () => {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* 1. Theme Colors & Presets Section */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h3 className="font-bold text-sm text-white flex items-center gap-2 uppercase tracking-wider text-amber-400">
-              <Palette className="w-4 h-4" />
-              <span>Theme Colors & Color Schemes</span>
-            </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-              Live Palettes
-            </span>
+        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="font-bold text-base text-white flex items-center gap-2 uppercase tracking-wider text-amber-400">
+                <Palette className="w-5 h-5 text-amber-400" />
+                <span>Custom Theme Colors & Visual Branding Studio</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Pick any custom brand color, choose luxury presets, and preview live changes instantly
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleChange('primary_color', '#f59e0b');
+                  handleChange('secondary_color', '#0f172a');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                title="Reset to default Imperial Amber"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset to Default</span>
+              </button>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                Live DOM Preview
+              </span>
+            </div>
           </div>
 
+          {/* Interactive Live Theme Preview Box */}
+          <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-amber-400" />
+                Live Interactive UI Preview (How it looks across the system)
+              </span>
+              <span className="text-[11px] font-mono font-normal text-slate-500">
+                Primary: <strong style={{ color: form.primary_color || '#f59e0b' }}>{form.primary_color || '#f59e0b'}</strong>
+              </span>
+            </div>
+
+            <div
+              className="p-4 rounded-xl border transition-all duration-300 space-y-3"
+              style={{
+                backgroundColor: form.secondary_color || '#0f172a',
+                borderColor: `${form.primary_color || '#f59e0b'}40`,
+                boxShadow: `0 8px 30px -10px ${form.primary_color || '#f59e0b'}30`,
+              }}
+            >
+              {/* Mock Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow"
+                    style={{ backgroundColor: form.primary_color || '#f59e0b', color: '#000' }}
+                  >
+                    👑
+                  </span>
+                  <div>
+                    <div className="text-xs font-extrabold text-white">
+                      {form.restaurant_name || 'Gummadi Grand Restaurant Eluru'}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {form.restaurant_tagline || 'Fine Dining & Luxury Banquet'}
+                    </div>
+                  </div>
+                </div>
+
+                <span
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-full border shadow-sm"
+                  style={{
+                    backgroundColor: `${form.primary_color || '#f59e0b'}20`,
+                    borderColor: `${form.primary_color || '#f59e0b'}60`,
+                    color: form.primary_color || '#f59e0b',
+                  }}
+                >
+                  ● Table T-04 Active
+                </span>
+              </div>
+
+              {/* Mock Card Content */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="space-y-0.5">
+                  <div className="text-[11px] text-slate-400 font-semibold">Sample Order ORD-2026-08</div>
+                  <div className="text-base font-black text-white flex items-center gap-1">
+                    <span>{form.currency_symbol || '₹'}</span>
+                    <span style={{ color: form.primary_color || '#f59e0b' }}>1,850.00</span>
+                    <span className="text-[10px] font-normal text-slate-400 ml-1">(3 Items Delivered)</span>
+                  </div>
+                </div>
+
+                {/* Mock Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-md transition transform active:scale-95"
+                    style={{
+                      backgroundColor: form.primary_color || '#f59e0b',
+                      color: '#020617',
+                    }}
+                  >
+                    🧾 Generate Bill
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold border transition"
+                    style={{
+                      borderColor: `${form.primary_color || '#f59e0b'}80`,
+                      color: form.primary_color || '#f59e0b',
+                      backgroundColor: `${form.primary_color || '#f59e0b'}10`,
+                    }}
+                  >
+                    🛎️ View KDS
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Studio Inputs */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Primary Accent Color Picker */}
+            <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                  <span>1. Custom Primary Accent Color</span>
+                </label>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  {form.primary_color || '#f59e0b'}
+                </span>
+              </div>
+
+              {/* Native Picker & Hex Input */}
+              <div className="flex gap-2.5 items-center">
+                <input
+                  type="color"
+                  value={form.primary_color || '#f59e0b'}
+                  onChange={(e) => handleChange('primary_color', e.target.value)}
+                  className="w-14 h-11 rounded-xl bg-slate-800 cursor-pointer border border-slate-700 p-1"
+                />
+                <input
+                  type="text"
+                  value={form.primary_color || ''}
+                  onChange={(e) => handleChange('primary_color', e.target.value)}
+                  placeholder="#f59e0b"
+                  maxLength={7}
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono font-bold uppercase focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* 16 Quick Color Swatches */}
+              <div>
+                <span className="block text-[11px] font-semibold text-slate-400 mb-2">
+                  Popular Vibrant Color Swatches (Click to Apply):
+                </span>
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                  {QUICK_PRIMARY_SWATCHES.map((swatch) => {
+                    const isSelected = (form.primary_color || '').toLowerCase() === swatch.hex.toLowerCase();
+                    return (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => handleChange('primary_color', swatch.hex)}
+                        title={`${swatch.name} (${swatch.hex})`}
+                        className={`h-8 rounded-xl border flex items-center justify-center transition transform active:scale-90 ${
+                          isSelected ? 'ring-2 ring-white scale-110 shadow-lg' : 'hover:scale-105 border-white/10'
+                        }`}
+                        style={{ backgroundColor: swatch.hex }}
+                      >
+                        {isSelected && <span className="text-xs text-black font-black">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Secondary / Background Accent Color Picker */}
+            <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                  <span>2. Secondary / Mood Background Color</span>
+                </label>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  {form.secondary_color || '#0f172a'}
+                </span>
+              </div>
+
+              {/* Native Picker & Hex Input */}
+              <div className="flex gap-2.5 items-center">
+                <input
+                  type="color"
+                  value={form.secondary_color || '#0f172a'}
+                  onChange={(e) => handleChange('secondary_color', e.target.value)}
+                  className="w-14 h-11 rounded-xl bg-slate-800 cursor-pointer border border-slate-700 p-1"
+                />
+                <input
+                  type="text"
+                  value={form.secondary_color || ''}
+                  onChange={(e) => handleChange('secondary_color', e.target.value)}
+                  placeholder="#0f172a"
+                  maxLength={7}
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono font-bold uppercase focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* 6 Mood Background Swatches */}
+              <div>
+                <span className="block text-[11px] font-semibold text-slate-400 mb-2">
+                  Atmospheric Dark Tint Swatches (Click to Apply):
+                </span>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {QUICK_SECONDARY_SWATCHES.map((swatch) => {
+                    const isSelected = (form.secondary_color || '').toLowerCase() === swatch.hex.toLowerCase();
+                    return (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => handleChange('secondary_color', swatch.hex)}
+                        title={`${swatch.name} (${swatch.hex})`}
+                        className={`h-8 rounded-xl border flex items-center justify-center transition transform active:scale-90 ${
+                          isSelected ? 'ring-2 ring-white scale-105 shadow-lg' : 'hover:scale-105 border-white/10'
+                        }`}
+                        style={{ backgroundColor: swatch.hex }}
+                      >
+                        {isSelected && <span className="text-xs text-white font-black">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 1-Click Curated Theme Presets Grid */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase mb-2">
-              Select 1-Click Luxury Theme Preset:
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
+              Or Choose Curated 1-Click Luxury Theme Presets:
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
               {THEME_PRESETS.map((preset) => {
-                const isActive = form.primary_color?.toLowerCase() === preset.primary.toLowerCase();
+                const isActive = (form.primary_color || '').toLowerCase() === preset.primary.toLowerCase();
                 return (
                   <button
                     key={preset.name}
@@ -238,64 +509,29 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => handleApplyPresetTheme(preset)}
                     className={`p-3 rounded-2xl border text-left transition relative flex flex-col justify-between ${
                       isActive
-                        ? 'border-white bg-slate-800/90 shadow-xl'
+                        ? 'border-white bg-slate-800/90 shadow-xl ring-1 ring-white/50'
                         : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
                     }`}
                   >
                     <div>
                       <div className="flex items-center gap-1.5 mb-2">
                         <span
-                          className="w-4 h-4 rounded-full border border-white/20 shadow-sm"
+                          className="w-4 h-4 rounded-full border border-white/20 shadow-sm shrink-0"
                           style={{ backgroundColor: preset.primary }}
                         />
                         <span
-                          className="w-3 h-3 rounded-full border border-white/20"
+                          className="w-3 h-3 rounded-full border border-white/20 shrink-0"
                           style={{ backgroundColor: preset.secondary }}
                         />
                       </div>
-                      <div className="text-xs font-bold text-white line-clamp-1">{preset.name}</div>
+                      <div className="text-[11px] font-bold text-white line-clamp-1">{preset.name}</div>
                     </div>
-                    <span className="text-[9px] font-semibold text-slate-400 mt-2 block">
+                    <span className="text-[8px] font-semibold text-slate-400 mt-2 block">
                       {preset.badge}
                     </span>
                   </button>
                 );
               })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                Custom Primary Accent Color
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={form.primary_color || '#f59e0b'}
-                  onChange={(e) => handleChange('primary_color', e.target.value)}
-                  className="w-11 h-10 rounded-xl bg-slate-800 cursor-pointer border border-slate-700"
-                />
-                <input
-                  type="text"
-                  value={form.primary_color || ''}
-                  onChange={(e) => handleChange('primary_color', e.target.value)}
-                  placeholder="#f59e0b"
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                Currency Symbol
-              </label>
-              <input
-                type="text"
-                value={form.currency_symbol || '₹'}
-                onChange={(e) => handleChange('currency_symbol', e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-amber-500"
-              />
             </div>
           </div>
         </div>
