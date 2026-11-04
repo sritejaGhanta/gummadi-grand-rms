@@ -248,4 +248,103 @@ export class OrdersService {
 
     return payload;
   }
+
+  async cancelOrderItem(orderItemId: string, reason: string, user: any) {
+    const item = await this.itemRepo.findOne({
+      where: { id: orderItemId },
+      relations: ['order', 'order.table', 'foodItem'],
+    });
+    if (!item) throw new NotFoundException('Order item not found');
+
+    if (item.status === OrderItemStatus.CANCELLED) {
+      throw new BadRequestException('Order item is already cancelled');
+    }
+
+    if (item.order?.status !== OrderStatus.ACTIVE) {
+      throw new BadRequestException('Cannot cancel item on a non-active or settled order');
+    }
+
+    item.status = OrderItemStatus.CANCELLED;
+    const cancelNote = reason ? `[CANCELLED: ${reason}]` : '[CANCELLED by customer]';
+    item.specialInstructions = item.specialInstructions
+      ? `${item.specialInstructions} ${cancelNote}`
+      : cancelNote;
+
+    const savedItem = await this.itemRepo.save(item);
+
+    // Recalculate remaining active items for this order
+    const allItems = await this.itemRepo.find({
+      where: { orderId: item.orderId },
+    });
+
+    const nonCancelledItems = allItems.filter(
+      (it) => it.status !== OrderItemStatus.CANCELLED,
+    );
+
+    const order = await this.orderRepo.findOne({
+      where: { id: item.orderId },
+      relations: ['table'],
+    });
+
+    if (order) {
+      if (nonCancelledItems.length === 0) {
+        // If all items were cancelled, cancel the entire order and free the table!
+        order.subtotal = 0;
+        order.taxAmount = 0;
+        order.totalAmount = 0;
+        order.status = OrderStatus.CANCELLED;
+        await this.orderRepo.save(order);
+
+        if (order.tableId) {
+          await this.tableRepo.update(order.tableId, { status: TableStatus.AVAILABLE });
+          const table = await this.tableRepo.findOne({ where: { id: order.tableId } });
+          if (table) {
+            this.eventsGateway.notifyTableStatus(table);
+          }
+        }
+      } else {
+        const subtotal = nonCancelledItems.reduce(
+          (acc, it) => acc + Number(it.totalPrice),
+          0,
+        );
+        const taxAmount = Number((subtotal * 0.05).toFixed(2));
+        const totalAmount = Number((subtotal + taxAmount).toFixed(2));
+
+        order.subtotal = subtotal;
+        order.taxAmount = taxAmount;
+        order.totalAmount = totalAmount;
+        await this.orderRepo.save(order);
+      }
+    }
+
+    // Broadcast item status update
+    this.eventsGateway.notifyItemStatusUpdated(savedItem);
+
+    if (order) {
+      const fullOrder = await this.findOne(order.id);
+      this.eventsGateway.notifyNewOrder(fullOrder);
+    }
+
+    await this.logService.log({
+      userId: user?.id,
+      username: user?.username,
+      roleName: user?.role?.name,
+      action: 'ITEM_CANCELLED',
+      resource: 'orders',
+      resourceId: item.orderId,
+      details: {
+        itemId: item.id,
+        foodName: item.foodItem?.name,
+        quantity: item.quantity,
+        reason: reason || 'Customer requested cancellation',
+        table: item.order?.table?.tableNumber,
+      },
+    });
+
+    return {
+      success: true,
+      item: savedItem,
+      message: `Item "${item.foodItem?.name || ''}" cancelled successfully`,
+    };
+  }
 }

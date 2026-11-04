@@ -58,6 +58,17 @@ export class OrdersController {
     return this.service.markItemDelivered(itemId, user);
   }
 
+  @Put('items/:itemId/cancel')
+  @RequirePermissions('orders.update')
+  @ApiOperation({ summary: 'Cancel an item from an active customer order' })
+  async cancelOrderItem(
+    @Param('itemId') itemId: string,
+    @Body('reason') reason: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.service.cancelOrderItem(itemId, reason, user);
+  }
+
   @Post('tables/:tableId/request-bill')
   @RequirePermissions('orders.update')
   @ApiOperation({ summary: 'Staff requests bill generation for a table' })

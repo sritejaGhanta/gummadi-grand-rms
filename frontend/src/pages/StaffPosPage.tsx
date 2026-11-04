@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Flame,
   Search,
+  X,
 } from 'lucide-react';
 
 export const StaffPosPage: React.FC = () => {
@@ -198,6 +199,22 @@ export const StaffPosPage: React.FC = () => {
       if (selectedTable) loadActiveOrder(selectedTable.id);
     } catch (e: any) {
       setErrorMessage(e.message);
+    }
+  };
+
+  const handleCancelItem = async (itemId: string, itemName: string) => {
+    const reason = window.prompt(`Enter cancellation reason for "${itemName}":`, 'Customer changed mind');
+    if (reason === null) return;
+    try {
+      await ordersApi.cancelItem(itemId, reason);
+      setActionSuccess(`"${itemName}" was cancelled. Bill total updated.`);
+      setTimeout(() => setActionSuccess(null), 3500);
+      if (selectedTable) {
+        await loadActiveOrder(selectedTable.id);
+        await loadTables();
+      }
+    } catch (e: any) {
+      setErrorMessage(e.response?.data?.message || e.message || 'Failed to cancel item');
     }
   };
 
@@ -563,34 +580,57 @@ export const StaffPosPage: React.FC = () => {
                   {activeOrder.items?.map((it: any) => {
                     const isReady = it.status === 'READY';
                     const isDelivered = it.status === 'DELIVERED';
+                    const isCancelled = it.status === 'CANCELLED';
                     return (
                       <div
                         key={it.id}
                         className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
-                          isReady
+                          isCancelled
+                            ? 'bg-rose-950/20 border-rose-500/30 opacity-60'
+                            : isReady
                             ? 'bg-emerald-500/10 border-emerald-500/30'
                             : isDelivered
-                            ? 'bg-slate-800/40 border-slate-800 opacity-60'
+                            ? 'bg-slate-800/40 border-slate-800 opacity-70'
                             : 'bg-slate-800/60 border-slate-700/60'
                         }`}
                       >
                         <div>
-                          <div className="font-semibold text-white">
+                          <div className={`font-semibold text-white ${isCancelled ? 'line-through text-slate-400' : ''}`}>
                             {it.quantity}x {it.foodItem?.name}
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            Status: <strong className="uppercase text-amber-400">{it.status}</strong>
+                            Status:{' '}
+                            <strong className={`uppercase ${isCancelled ? 'text-rose-400' : 'text-amber-400'}`}>
+                              {it.status}
+                            </strong>
                           </div>
                         </div>
 
-                        {isReady && (
-                          <button
-                            onClick={() => handleMarkDelivered(it.id)}
-                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[10px] transition shadow-md shadow-amber-500/20"
-                          >
-                            Mark Delivered
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {isReady && !isCancelled && (
+                            <button
+                              onClick={() => handleMarkDelivered(it.id)}
+                              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-[10px] transition shadow-md shadow-amber-500/20"
+                            >
+                              Mark Delivered
+                            </button>
+                          )}
+                          {!isDelivered && !isCancelled && (
+                            <button
+                              onClick={() => handleCancelItem(it.id, it.foodItem?.name || 'Item')}
+                              className="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold rounded-lg text-[10px] transition flex items-center gap-1"
+                              title="Cancel item for customer"
+                            >
+                              <X className="w-3 h-3" />
+                              <span>Cancel</span>
+                            </button>
+                          )}
+                          {isCancelled && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-bold">
+                              Cancelled
+                            </span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

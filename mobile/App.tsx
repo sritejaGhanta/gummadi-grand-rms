@@ -518,6 +518,35 @@ export default function App() {
     } else Alert.alert('Error', res.error ?? 'Failed.');
   };
 
+  const cancelOrderItem = (itemId: string, name?: string) => {
+    Alert.alert(
+      'Cancel Item?',
+      `Are you sure you want to cancel "${name || 'Item'}" from this table's order?`,
+      [
+        { text: 'No, Keep', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await api(
+              `${serverUrl}/orders/items/${itemId}/cancel`,
+              'PUT',
+              { reason: 'Customer requested cancellation' },
+              token,
+            );
+            if (res.success) {
+              Alert.alert('Item Cancelled', `"${name || 'Item'}" removed. Bill total updated.`);
+              if (selectedTable) loadActiveOrder(selectedTable.id);
+              if (selectedFloorId) loadTables(selectedFloorId);
+            } else {
+              Alert.alert('Error', res.error ?? 'Could not cancel item.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const requestBill = async () => {
     if (!selectedTable || requestingBill) return;
     if (selectedTable.status === 'BILLING' || activeOrder?.table?.status === 'BILLING') {
@@ -913,21 +942,34 @@ export default function App() {
                 {activeOrder.items?.map((it: any) => {
                   const isReady = it.status === 'READY';
                   const isDone = it.status === 'DELIVERED';
+                  const isCancelled = it.status === 'CANCELLED';
                   return (
-                    <View key={it.id} style={S.activeOrderRow}>
+                    <View key={it.id} style={[S.activeOrderRow, isCancelled && { opacity: 0.5 }]}>
                       <View style={{ flex: 1 }}>
-                        <Text style={S.activeItemName}>{it.quantity}× {it.foodItem?.name}</Text>
+                        <Text style={[S.activeItemName, isCancelled && { textDecorationLine: 'line-through', color: '#94a3b8' }]}>
+                          {it.quantity}× {it.foodItem?.name}
+                        </Text>
                         <Text style={[S.activeItemStatus,
-                          isReady && S.txtReady, isDone && S.txtDone]}>
-                          {isDone ? '✅ Served to table' : isReady ? '🔔 Ready — serve now!' : `⏳ ${it.status}`}
+                          isReady && S.txtReady, isDone && S.txtDone, isCancelled && { color: '#f87171' }]}>
+                          {isCancelled ? '❌ Cancelled' : isDone ? '✅ Served to table' : isReady ? '🔔 Ready — serve now!' : `⏳ ${it.status}`}
                         </Text>
                       </View>
-                      {isReady && (
-                        <TouchableOpacity style={S.serveSmall}
-                          onPress={() => markDelivered(it.id, it.foodItem?.name)}>
-                          <Text style={S.serveSmallTxt}>Serve</Text>
-                        </TouchableOpacity>
-                      )}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        {isReady && !isCancelled && (
+                          <TouchableOpacity style={S.serveSmall}
+                            onPress={() => markDelivered(it.id, it.foodItem?.name)}>
+                            <Text style={S.serveSmallTxt}>Serve</Text>
+                          </TouchableOpacity>
+                        )}
+                        {!isDone && !isCancelled && (
+                          <TouchableOpacity
+                            style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: '#ef444420', borderWidth: 1, borderColor: '#ef444450' }}
+                            onPress={() => cancelOrderItem(it.id, it.foodItem?.name)}
+                          >
+                            <Text style={{ color: '#f87171', fontSize: 11, fontWeight: '700' }}>✕ Cancel</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   );
                 })}

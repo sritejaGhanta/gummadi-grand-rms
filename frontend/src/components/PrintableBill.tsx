@@ -77,7 +77,7 @@ export const PrintableBill: React.FC<PrintableBillProps> = ({ bill, onPrint }) =
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {bill.order?.items?.map((item: any, idx: number) => (
+              {bill.order?.items?.filter((item: any) => item.status !== 'CANCELLED').map((item: any, idx: number) => (
                 <tr key={item.id || idx}>
                   <td className="py-1 pr-1 truncate max-w-[120px]">{item.foodItem?.name || item.name}</td>
                   <td className="text-center py-1">{item.quantity}</td>

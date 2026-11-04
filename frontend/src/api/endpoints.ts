@@ -47,6 +47,7 @@ export const ordersApi = {
     notes?: string;
   }) => apiClient.post('/orders', data),
   markItemDelivered: (itemId: string) => apiClient.put(`/orders/items/${itemId}/deliver`),
+  cancelItem: (itemId: string, reason?: string) => apiClient.put(`/orders/items/${itemId}/cancel`, { reason }),
   requestBill: (tableId: string) => apiClient.post(`/orders/tables/${tableId}/request-bill`),
 };
 
