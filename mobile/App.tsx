@@ -120,10 +120,10 @@ export default function App() {
 
   // ── Branding
   const [settings, setSettings] = useState<PublicSettings>({
-    restaurant_name: 'Royal Feast Palace',
-    restaurant_tagline: 'Restaurant Management System',
+    restaurant_name: 'Gummadi Grand Restaurant Eluru',
+    restaurant_tagline: 'Fine Dining & Luxury Banquet • Eluru',
     currency_symbol: '₹',
-    primary_color: '#d97706',
+    primary_color: '#f59e0b',
   });
 
   // ── Navigation
@@ -144,6 +144,7 @@ export default function App() {
   const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
   const [cart, setCart] = useState<Record<string, { item: any; qty: number; note: string }>>({});
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
+  const [requestingBill, setRequestingBill] = useState(false);
 
   // Note editor modal
   const [noteModalItem, setNoteModalItem] = useState<any | null>(null);
@@ -198,7 +199,18 @@ export default function App() {
       }
     });
 
+    let lastAlertedTable = '';
+    let lastAlertedTime = 0;
+
     socket.on('billing:requested', (data: any) => {
+      const now = Date.now();
+      const tbl = data?.tableNumber || data?.tableId;
+      if (tbl && tbl === lastAlertedTable && now - lastAlertedTime < 6000) {
+        return; // Suppress duplicate alert within 6 seconds
+      }
+      lastAlertedTable = tbl;
+      lastAlertedTime = now;
+
       Alert.alert('🧾 Bill Requested!', `Waiter requested bill for Table ${data?.tableNumber || ''}`);
       loadBilling();
       if (selectedFloorId) loadTables(selectedFloorId);
@@ -414,7 +426,9 @@ export default function App() {
         const bReq = b.table?.status === 'BILLING' ? 1 : 0;
         return bReq - aReq;
       });
-      setBillableOrders(active);
+      // Deduplicate orders by id so no duplicates appear
+      const uniqueOrders = Array.from(new Map(active.map((o: any) => [o.id, o])).values());
+      setBillableOrders(uniqueOrders);
     }
   };
 
@@ -505,13 +519,25 @@ export default function App() {
   };
 
   const requestBill = async () => {
-    if (!selectedTable) return;
-    const res = await api(`${serverUrl}/orders/tables/${selectedTable.id}/request-bill`, 'POST', undefined, token);
-    if (res.success) {
-      Alert.alert('Bill Requested 🧾', 'Manager notified to generate the bill.');
-      loadActiveOrder(selectedTable.id);
-      loadTables(selectedFloorId);
-    } else Alert.alert('Error', res.error ?? 'Could not request bill.');
+    if (!selectedTable || requestingBill) return;
+    if (selectedTable.status === 'BILLING' || activeOrder?.table?.status === 'BILLING') {
+      Alert.alert('Bill Already Requested', 'Manager has already been notified to generate the bill.');
+      return;
+    }
+    setRequestingBill(true);
+    try {
+      const res = await api(`${serverUrl}/orders/tables/${selectedTable.id}/request-bill`, 'POST', undefined, token);
+      if (res.success) {
+        Alert.alert('Bill Requested 🧾', 'Manager notified to generate the bill.');
+        setSelectedTable((prev: any) => (prev ? { ...prev, status: 'BILLING' } : null));
+        loadActiveOrder(selectedTable.id);
+        if (selectedFloorId) loadTables(selectedFloorId);
+      } else {
+        Alert.alert('Notice', res.error ?? 'Could not request bill.');
+      }
+    } finally {
+      setRequestingBill(false);
+    }
   };
 
   // ─────────────────────────────────────────────
@@ -905,16 +931,27 @@ export default function App() {
                     </View>
                   );
                 })}
-                {activeOrder.status !== 'BILLING' && (
-                  <TouchableOpacity style={S.reqBillBtn} onPress={requestBill}>
-                    <Text style={S.reqBillTxt}>🧾 Request Bill</Text>
-                  </TouchableOpacity>
-                )}
-                {activeOrder.status === 'BILLING' && (
-                  <View style={S.billingNote}>
-                    <Text style={S.billingNoteTxt}>🧾 Bill requested — awaiting manager.</Text>
-                  </View>
-                )}
+                {(() => {
+                  const isBillReq = selectedTable?.status === 'BILLING' || activeOrder?.table?.status === 'BILLING';
+                  if (!isBillReq) {
+                    return (
+                      <TouchableOpacity
+                        style={[S.reqBillBtn, requestingBill && { opacity: 0.6 }]}
+                        onPress={requestBill}
+                        disabled={requestingBill}
+                      >
+                        <Text style={S.reqBillTxt}>
+                          {requestingBill ? '⏳ Requesting...' : '🧾 Request Bill'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                  return (
+                    <View style={S.billingNote}>
+                      <Text style={S.billingNoteTxt}>🧾 Bill requested — awaiting manager.</Text>
+                    </View>
+                  );
+                })()}
               </View>
             )}
 

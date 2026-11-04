@@ -36,6 +36,7 @@ export const StaffPosPage: React.FC = () => {
   const [cart, setCart] = useState<Record<string, { item: any; quantity: number; notes: string }>>({});
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const [isRequestingBill, setIsRequestingBill] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -201,14 +202,22 @@ export const StaffPosPage: React.FC = () => {
   };
 
   const handleRequestBill = async () => {
-    if (!selectedTable) return;
+    if (!selectedTable || isRequestingBill) return;
+    if (selectedTable.status === 'BILLING') {
+      setActionSuccess('Bill has already been requested for this table.');
+      return;
+    }
+    setIsRequestingBill(true);
     try {
       await ordersApi.requestBill(selectedTable.id);
+      setSelectedTable((prev: any) => (prev ? { ...prev, status: 'BILLING' } : null));
       setActionSuccess('Bill generation requested! Manager notified.');
       setTimeout(() => setActionSuccess(null), 3500);
       loadTables();
     } catch (e: any) {
       setErrorMessage(e.message);
+    } finally {
+      setIsRequestingBill(false);
     }
   };
 
@@ -591,11 +600,18 @@ export const StaffPosPage: React.FC = () => {
                 {selectedTable.status === 'OCCUPIED' && (
                   <button
                     onClick={handleRequestBill}
-                    className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition"
+                    disabled={isRequestingBill}
+                    className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition disabled:opacity-50"
                   >
                     <Receipt className="w-3.5 h-3.5" />
-                    Request Bill Settlement
+                    {isRequestingBill ? 'Requesting...' : 'Request Bill Settlement'}
                   </button>
+                )}
+                {selectedTable.status === 'BILLING' && (
+                  <div className="w-full py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold text-xs flex items-center justify-center gap-1.5">
+                    <Receipt className="w-3.5 h-3.5" />
+                    🧾 Bill requested — awaiting manager settlement
+                  </div>
                 )}
               </div>
             )}

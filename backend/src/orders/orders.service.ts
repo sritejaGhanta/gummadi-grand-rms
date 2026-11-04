@@ -209,6 +209,18 @@ export class OrdersService {
     const activeOrder = await this.findActiveByTable(tableId);
     if (!activeOrder) throw new BadRequestException('No active order on this table');
 
+    // Prevent duplicate bill request notifications if table is already in BILLING status
+    if (table.status === TableStatus.BILLING) {
+      return {
+        tableId: table.id,
+        tableNumber: table.tableNumber,
+        orderId: activeOrder.id,
+        orderNumber: activeOrder.orderNumber,
+        requestedBy: user.username,
+        alreadyRequested: true,
+      };
+    }
+
     table.status = TableStatus.BILLING;
     await this.tableRepo.save(table);
 
