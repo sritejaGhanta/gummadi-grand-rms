@@ -109,8 +109,9 @@ const ProtectedLayout: React.FC<{
 };
 
 export const App: React.FC = () => {
+  const basename = window.location.pathname.startsWith('/restaurant') ? '/restaurant' : '';
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AuthProvider>
         <SocketProvider>
           <SettingsProvider>
