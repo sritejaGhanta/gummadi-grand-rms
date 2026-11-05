@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Download RMS Mobile App (Android APK)</title>
+  <title>Download Gummadi Grand RMS Mobile App</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body {
-      background: radial-gradient(circle at top, #1e293b, #090d16);
+      background: radial-gradient(circle at top, #1e293b, #050a14);
       color: #f8fafc;
       min-height: 100vh;
       display: flex;
@@ -16,15 +16,15 @@
       padding: 20px;
     }
     .card {
-      background: rgba(30, 41, 59, 0.7);
+      background: rgba(13, 26, 46, 0.85);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 24px;
-      max-width: 480px;
+      max-width: 520px;
       width: 100%;
       padding: 36px 28px;
       text-align: center;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
     }
     .icon-badge {
       width: 80px;
@@ -34,34 +34,50 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 20px;
+      margin: 0 auto 16px;
       font-size: 38px;
       box-shadow: 0 10px 25px rgba(217, 119, 6, 0.4);
     }
-    h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; }
-    p.subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; color: #fff; }
+    p.subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 18px; line-height: 1.4; }
     .badge {
       display: inline-block;
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid rgba(16, 185, 129, 0.3);
       color: #34d399;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       padding: 6px 14px;
       border-radius: 9999px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 22px;
+      text-align: left;
+    }
+    .feat-item {
+      background: rgba(17, 31, 53, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    .feat-item strong { color: #fbbf24; display: block; margin-bottom: 2px; }
     .download-btn {
       display: block;
       width: 100%;
       background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #ffffff;
+      color: #020617;
       text-decoration: none;
-      font-weight: 700;
-      font-size: 16px;
-      padding: 16px;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 15px;
       border-radius: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       box-shadow: 0 10px 25px rgba(217, 119, 6, 0.35);
       transition: transform 0.2s, box-shadow 0.2s;
     }
@@ -70,54 +86,57 @@
       box-shadow: 0 15px 30px rgba(217, 119, 6, 0.5);
     }
     .info-box {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 14px;
       padding: 16px;
       text-align: left;
-      font-size: 13px;
+      font-size: 12px;
       color: #cbd5e1;
-      margin-top: 20px;
+      margin-top: 14px;
       line-height: 1.6;
     }
     .info-box strong { color: #f59e0b; }
-    .code { font-family: monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #38bdf8; }
+    .code { font-family: monospace; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; color: #38bdf8; font-size: 11px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon-badge">📱</div>
-    <h1>Gummadi Grand RMS Mobile</h1>
-    <p class="subtitle">Waiter Table POS & Chef Kitchen Display App</p>
-    <div class="badge">● v1.0.0 Standalone Production Release APK</div>
+    <div class="icon-badge">🍽️</div>
+    <h1>Gummadi Grand RMS</h1>
+    <p class="subtitle">Waiter Table POS • Chef KDS • Menu 86 • Manager Billing</p>
+    <div class="badge">● v1.2.0 Standalone Android APK (Release)</div>
 
-    <a href="/Restorent/demo_video.html" class="download-btn" style="background: linear-gradient(135deg, #10b981, #059669); margin-bottom: 12px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);">
-      🎬 Watch Client Demo Video (Telugu)
+    <div class="features-grid">
+      <div class="feat-item"><strong>⚡ Server Health Ping</strong>App tests API endpoint first before login</div>
+      <div class="feat-item"><strong>🔔 Chef Bell Audio</strong>Audible kitchen bell chime on new KOT</div>
+      <div class="feat-item"><strong>🛎️ Waiter Chime</strong>Instant pick-up alert when dish is ready</div>
+      <div class="feat-item"><strong>🔍 Search & Pagination</strong>Quick dish search & page navigation</div>
+      <div class="feat-item"><strong>🚫 Live Sold Out (86)</strong>Instant real-time sync across all devices</div>
+      <div class="feat-item"><strong>💰 Dynamic Tax & Cur</strong>Real-time currency & GST calculation</div>
+    </div>
+
+    <a href="/Restorent/gummadi-grand-restaurant.apk" class="download-btn" id="apk-download-btn" download>
+      ⬇️ Download Standalone APK
     </a>
 
-    <a href="/Restorent/gummadi-grand-restaurant.apk" class="download-btn" download>
-      ⬇️ Download Standalone APK (60 MB)
+    <a href="/Restorent/demo_video.html" class="download-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);">
+      🎬 Watch Telugu Walkthrough Demo
     </a>
 
     <div class="info-box">
-      <strong>How to Install on Android:</strong>
+      <strong>🚀 Setup & Default Credentials:</strong>
       <ol style="margin-left: 18px; margin-top: 6px;">
-        <li>Tap the download button above on your phone.</li>
-        <li>Open the downloaded <span class="code">rms-restaurant-app.apk</span> file.</li>
-        <li>Enable <em>"Allow from this source"</em> if prompted by Android.</li>
-        <li>LAN Server IP: <span id="server-ip-display" class="code">http://192.168.20.131:3000/api</span></li>
+        <li>Install <span class="code">rms-restaurant-app.apk</span> on Android.</li>
+        <li>On startup, test endpoint: <span class="code">https://dev.geoshcatechnologies.com/api</span> or local LAN IP.</li>
+        <li>Tap <em>"Proceed to Staff Login"</em>.</li>
       </ol>
-      <script>
-        const currentHost = window.location.hostname || '192.168.20.131';
-        const displayEl = document.getElementById('server-ip-display');
-        if (displayEl) {
-          displayEl.innerText = 'http://' + currentHost + ':3000/api';
-        }
-      </script>
       <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
-        <strong>Default Logins:</strong><br>
+        <strong>Quick Demo Logins:</strong><br>
         • Waiter: <span class="code">waiter / waiter123</span><br>
-        • Chef: <span class="code">chef / chef123</span>
+        • Chef: <span class="code">chef / chef123</span><br>
+        • Manager: <span class="code">manager / manager123</span><br>
+        • Admin: <span class="code">admin / admin123</span>
       </div>
     </div>
   </div>

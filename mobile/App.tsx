@@ -2,16 +2,14 @@
  * RMS – Restaurant Management System
  * Mobile Application (React Native / Expo)
  *
- * Full Capability Pin-to-Pin Feature Parity with Web Portal:
- * 1. Step 1: Server URL Connection & Health Check Screen on App Startup
- * 2. Step 2: Staff Sign In with Quick Role Logins
- * 3. Real-time Sockets & Audio Notifications (Chef Bell & Waiter Pick-up Chime)
- * 4. Waiter Order Taking with Live Search Bar, Categories, Diet Filter & Pagination
+ * Full Capability Feature Parity with Web Portal:
+ * 1. Default to Cloud Production (https://dev.geoshcatechnologies.com/api)
+ * 2. Instant Staff Login with Gummadi Grand Restaurant Branding
+ * 3. Bulletproof Waiter / Staff Session (Tables, Menu POS, Search, Pagination, Serving)
+ * 4. Real-time Audio Bells (Chef KOT Bell & Waiter Pickup Chime) + Vibration
  * 5. Real-time Menu Availability (Sold Out / 86) Sync
- * 6. Dynamic Restaurant Branding, Currency & Tax Settings Sync
- * 7. Kitchen KDS with Live Elapsed Timers and Multi-step Preparation Flow
- * 8. Waiter Delivery Tracking with Ready-to-Serve Action
- * 9. Manager Analytics Dashboard & Live Billing/Settlement
+ * 6. Kitchen KDS with Elapsed Timers and Multi-step Preparation
+ * 7. Manager Analytics Dashboard & Live Billing/Settlement
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -54,14 +52,15 @@ interface UserRole {
   id: string;
   name: string;
   displayName: string;
-  rolePermissions: Array<{ permission: { key: string } }>;
+  rolePermissions?: Array<{ permission?: { key: string } }>;
 }
 
 interface AuthUser {
   id: string;
   username: string;
-  name: string;
-  role: UserRole;
+  name?: string;
+  role?: UserRole;
+  permissions?: string[];
 }
 
 type ActiveTab =
@@ -81,8 +80,16 @@ interface ToastAlert {
 }
 
 // ─────────────────────────────────────────────
-//  Centralized API Helper
+//  API & Audio Helpers
 // ─────────────────────────────────────────────
+const CLOUD_PRODUCTION_URL = 'https://dev.geoshcatechnologies.com/api';
+
+const PRESET_SERVERS = [
+  { label: '🌐 Cloud Production', url: 'https://dev.geoshcatechnologies.com/api' },
+  { label: '🏢 Office LAN Server', url: 'http://192.168.20.154:3001/api' },
+  { label: '💻 Local Dev Host', url: 'http://192.168.20.131:3000/api' },
+];
+
 async function api(
   url: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
@@ -107,7 +114,6 @@ async function api(
   }
 }
 
-// Sound playing helper functions using expo-av
 let kitchenSound: Audio.Sound | null = null;
 let waiterSound: Audio.Sound | null = null;
 
@@ -157,30 +163,15 @@ async function playWaiterChime() {
   }
 }
 
-// ─────────────────────────────────────────────
-//  Preset Servers
-// ─────────────────────────────────────────────
-const PRESET_SERVERS = [
-  { label: '🌐 Cloud Production', url: 'https://dev.geoshcatechnologies.com/api' },
-  { label: '🏢 Office LAN Server', url: 'http://192.168.20.154:3001/api' },
-  { label: '💻 Local Dev Host', url: 'http://192.168.20.131:3000/api' },
-];
-
-const DEFAULT_SERVER_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (process.env.EXPO_PUBLIC_SERVER_IP
-    ? `http://${process.env.EXPO_PUBLIC_SERVER_IP}:3001/api`
-    : 'https://dev.geoshcatechnologies.com/api');
-
 export default function App() {
-  // ── Step 1: Server Config State
-  const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
-  const [serverConfigured, setServerConfigured] = useState(false);
+  // ── Server & Auth State (Defaults directly to Cloud Production)
+  const [serverUrl, setServerUrl] = useState(CLOUD_PRODUCTION_URL);
+  const [serverModalVisible, setServerModalVisible] = useState(false);
+  const [customServerInput, setCustomServerInput] = useState(CLOUD_PRODUCTION_URL);
   const [serverStatus, setServerStatus] = useState<null | 'ok' | 'fail'>(null);
   const [serverLatency, setServerLatency] = useState<number | null>(null);
   const [testingServer, setTestingServer] = useState(false);
 
-  // ── Step 2: Auth State
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
@@ -191,13 +182,13 @@ export default function App() {
   const [toast, setToast] = useState<ToastAlert | null>(null);
   const toastAnim = useRef(new Animated.Value(-100)).current;
 
-  // ── Dynamic Branding & Settings
+  // ── Dynamic Branding & Settings (Defaults to Gummadi Grand Restaurant)
   const [settings, setSettings] = useState<PublicSettings>({
     restaurant_name: 'Gummadi Grand Restaurant Eluru',
     restaurant_tagline: 'Fine Dining & Luxury Banquet • Eluru',
     currency_symbol: '₹',
     primary_color: '#d97706',
-    tax_percentage: '5',
+    tax_percentage: '5.0',
   });
 
   // ── Navigation Tab
@@ -303,15 +294,13 @@ export default function App() {
     });
 
     socket.on('connect', () => {
-      if (user?.role?.name) {
-        socket.emit('joinRoleRoom', user.role.name);
-      }
+      const rName = user.role?.name || (user as any).role || '';
+      if (rName) socket.emit('joinRoleRoom', rName);
     });
 
-    // 1. Chef Notification: New Order placed
     socket.on('kitchen:new_order', (data: any) => {
-      const userRole = user.role?.name?.toLowerCase() || '';
-      if (userRole === 'chef' || userRole === 'admin') {
+      const rName = (user.role?.name || (user as any).role || '').toLowerCase();
+      if (rName === 'chef' || rName === 'admin') {
         playKitchenChime();
         triggerToast(
           'warning',
@@ -324,17 +313,16 @@ export default function App() {
       loadDashboard();
     });
 
-    socket.on('order:created', (data: any) => {
+    socket.on('order:created', () => {
       loadServing();
       loadKitchen();
       loadDashboard();
       if (selectedFloorId) loadTables(selectedFloorId);
     });
 
-    // 2. Waiter Notification: Dish Ready to Serve
     socket.on('order:item_ready', (item: any) => {
-      const userRole = user.role?.name?.toLowerCase() || '';
-      if (userRole === 'waiter' || userRole === 'staff' || userRole === 'admin') {
+      const rName = (user.role?.name || (user as any).role || '').toLowerCase();
+      if (rName === 'waiter' || rName === 'staff' || rName === 'admin') {
         playWaiterChime();
         triggerToast(
           'success',
@@ -348,8 +336,8 @@ export default function App() {
 
     socket.on('order:item_status_changed', (item: any) => {
       if (item.status === 'READY') {
-        const userRole = user.role?.name?.toLowerCase() || '';
-        if (userRole === 'waiter' || userRole === 'staff' || userRole === 'admin') {
+        const rName = (user.role?.name || (user as any).role || '').toLowerCase();
+        if (rName === 'waiter' || rName === 'staff' || rName === 'admin') {
           playWaiterChime();
           triggerToast(
             'success',
@@ -363,30 +351,21 @@ export default function App() {
       if (selectedTable) loadActiveOrder(selectedTable.id);
     });
 
-    // 3. Live Menu Availability Sync (Sold Out / 86)
     socket.on('menu:availability_updated', (data: any) => {
       if (data?.foodItemId) {
         setMenuItems((prev) =>
-          prev.map((it) => {
-            if (it.id === data.foodItemId) {
-              return {
-                ...it,
-                availability: { ...(it.availability || {}), isAvailable: data.isAvailable },
-              };
-            }
-            return it;
-          }),
+          prev.map((it) =>
+            it.id === data.foodItemId
+              ? { ...it, availability: { ...(it.availability || {}), isAvailable: data.isAvailable } }
+              : it,
+          ),
         );
         setAvailItems((prev) =>
-          prev.map((it) => {
-            if (it.id === data.foodItemId) {
-              return {
-                ...it,
-                availability: { ...(it.availability || {}), isAvailable: data.isAvailable },
-              };
-            }
-            return it;
-          }),
+          prev.map((it) =>
+            it.id === data.foodItemId
+              ? { ...it, availability: { ...(it.availability || {}), isAvailable: data.isAvailable } }
+              : it,
+          ),
         );
         triggerToast(
           'info',
@@ -396,22 +375,16 @@ export default function App() {
       }
     });
 
-    // 4. Billing Requested by Waiter
     socket.on('billing:requested', (data: any) => {
-      const userRole = user.role?.name?.toLowerCase() || '';
-      if (userRole === 'manager' || userRole === 'admin') {
-        triggerToast(
-          'warning',
-          '🧾 Bill Requested!',
-          `Waiter requested bill for Table ${data?.tableNumber || ''}.`,
-        );
+      const rName = (user.role?.name || (user as any).role || '').toLowerCase();
+      if (rName === 'manager' || rName === 'admin') {
+        triggerToast('warning', '🧾 Bill Requested!', `Waiter requested bill for Table ${data?.tableNumber || ''}.`);
         loadBilling();
         loadDashboard();
       }
       if (selectedFloorId) loadTables(selectedFloorId);
     });
 
-    // 5. Billing Paid & Released
     socket.on('billing:paid', () => {
       loadBilling();
       loadDashboard();
@@ -419,12 +392,10 @@ export default function App() {
       if (selectedTable) loadActiveOrder(selectedTable.id);
     });
 
-    // 6. Table Status Updates
     socket.on('table:status_updated', () => {
       if (selectedFloorId) loadTables(selectedFloorId);
     });
 
-    // 7. Dynamic Settings Updated
     socket.on('settings:updated', (data: any) => {
       if (data) setSettings((prev) => ({ ...prev, ...data }));
     });
@@ -432,54 +403,32 @@ export default function App() {
     return () => {
       socket.disconnect();
     };
-  }, [token, user?.role?.name, serverUrl, selectedTable?.id, selectedFloorId]);
+  }, [token, user, serverUrl, selectedTable?.id, selectedFloorId]);
 
   // ─────────────────────────────────────────────
-  //  Step 1: Test Server Connection
+  //  Server Test Helper
   // ─────────────────────────────────────────────
-  const testServer = async () => {
+  const testServerUrl = async (targetUrl: string) => {
     setTestingServer(true);
     setServerStatus(null);
     setServerLatency(null);
-
-    const cleanUrl = serverUrl.trim().replace(/\/+$/, '');
+    const cleanUrl = targetUrl.trim().replace(/\/+$/, '');
     const res = await api(`${cleanUrl}/settings/public`);
-
     setTestingServer(false);
     if (res.success && res.data) {
       setServerStatus('ok');
-      setServerLatency(res.latency ?? 50);
+      setServerLatency(res.latency ?? 40);
       setSettings((prev) => ({ ...prev, ...res.data }));
+      setServerUrl(cleanUrl);
+      return true;
     } else {
       setServerStatus('fail');
-      Alert.alert(
-        'Connection Unreachable',
-        `Cannot reach API endpoint:\n${cleanUrl}\n\n• For Wi-Fi: Make sure phone is connected to the same network or VPN.\n• For Cloud: Verify server domain is accessible.`,
-      );
-    }
-  };
-
-  const handleProceedToLogin = () => {
-    if (serverStatus === 'ok') {
-      setServerConfigured(true);
-    } else {
-      Alert.alert(
-        'Verify Server First',
-        'Please tap "Test Connection" to confirm the server is reachable before proceeding.',
-        [
-          { text: 'Test Now', onPress: testServer },
-          {
-            text: 'Proceed Anyway',
-            style: 'destructive',
-            onPress: () => setServerConfigured(true),
-          },
-        ],
-      );
+      return false;
     }
   };
 
   // ─────────────────────────────────────────────
-  //  Step 2: Staff Authentication
+  //  Staff Authentication
   // ─────────────────────────────────────────────
   const handleLogin = async () => {
     if (!loginUsername.trim() || !loginPassword.trim()) {
@@ -497,38 +446,48 @@ export default function App() {
     if (res.success && res.data?.accessToken) {
       const tok: string = res.data.accessToken;
       const usr: AuthUser = res.data.user;
+
+      // Extract all permission keys robustly
+      const perms = new Set<string>();
+      if (Array.isArray(usr.permissions)) {
+        usr.permissions.forEach((k: string) => perms.add(k));
+      }
+      if (Array.isArray(usr.role?.rolePermissions)) {
+        usr.role.rolePermissions.forEach((rp: any) => {
+          if (rp.permission?.key) perms.add(rp.permission.key);
+        });
+      }
+      const roleName = (usr.role?.name || (usr as any).role || '').toLowerCase();
+      if (roleName === 'admin') {
+        ['kitchen.view', 'menu.availability.update', 'tables.manage', 'orders.create', 'orders.view', 'orders.update', 'reports.view', 'billing.view', 'menu.view'].forEach((k) => perms.add(k));
+      } else if (roleName === 'staff' || roleName === 'waiter') {
+        ['tables.manage', 'orders.create', 'orders.view', 'orders.update', 'menu.view', 'billing.view'].forEach((k) => perms.add(k));
+      } else if (roleName === 'chef') {
+        ['kitchen.view', 'kitchen.accept', 'kitchen.prepare', 'kitchen.mark_ready', 'menu.availability.update', 'menu.view'].forEach((k) => perms.add(k));
+      } else if (roleName === 'manager') {
+        ['reports.view', 'billing.view', 'tables.manage', 'orders.view', 'menu.view', 'menu.availability.update'].forEach((k) => perms.add(k));
+      }
+
       setToken(tok);
       setUser(usr);
 
-      // Determine initial tab dynamically based on role permissions
-      const perms = new Set(
-        usr.role?.rolePermissions?.map((rp) => rp.permission.key) ?? [],
-      );
-
-      if (perms.has('kitchen.view')) {
+      // Route to correct starting view
+      if (perms.has('kitchen.view') && !perms.has('tables.manage')) {
         setActiveTab('kitchen');
         loadKitchen(tok);
-      } else if (perms.has('reports.view')) {
+      } else if (perms.has('reports.view') && !perms.has('tables.manage')) {
         setActiveTab('dashboard');
         loadDashboard(tok);
-      } else if (perms.has('tables.manage')) {
+      } else {
+        // Waiter / Staff / Admin start on Tables
         setActiveTab('tables');
         loadFloors(tok);
         loadMenu(tok);
-      } else if (perms.has('orders.view') || perms.has('orders.update')) {
-        setActiveTab('serving');
-        loadServing(tok);
-      } else {
-        setActiveTab('tables');
-        loadFloors(tok);
       }
     } else {
       const msg = res.error ?? '';
       if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
-        Alert.alert(
-          'Network Error',
-          `Cannot connect to server at:\n${serverUrl}\n\nPlease check connection.`,
-        );
+        Alert.alert('Network Error', `Cannot reach server at:\n${serverUrl}\n\nPlease check Wi-Fi/Internet connection.`);
       } else {
         Alert.alert('Login Failed', 'Invalid username or password.');
       }
@@ -563,12 +522,20 @@ export default function App() {
   //  Data Loaders
   // ─────────────────────────────────────────────
   const loadFloors = async (tok = token) => {
+    setLoadingTables(true);
     const res = await api(`${serverUrl}/floors`, 'GET', undefined, tok);
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       setFloors(res.data);
       const fid = res.data[0].id;
       setSelectedFloorId(fid);
-      loadTables(fid, tok);
+      if (Array.isArray(res.data[0].tables) && res.data[0].tables.length > 0) {
+        setTables(res.data[0].tables);
+        setLoadingTables(false);
+      } else {
+        await loadTables(fid, tok);
+      }
+    } else {
+      setLoadingTables(false);
     }
   };
 
@@ -884,10 +851,29 @@ export default function App() {
   const cur = settings.currency_symbol || '₹';
   const taxPct = +(settings.tax_percentage || 5);
 
-  const userPerms = useMemo(
-    () => new Set(user?.role?.rolePermissions?.map((rp) => rp.permission.key) ?? []),
-    [user],
-  );
+  const userPerms = useMemo(() => {
+    const keys = new Set<string>();
+    if (Array.isArray(user?.permissions)) {
+      user.permissions.forEach((k: string) => keys.add(k));
+    }
+    if (Array.isArray(user?.role?.rolePermissions)) {
+      user.role.rolePermissions.forEach((rp: any) => {
+        if (rp.permission?.key) keys.add(rp.permission.key);
+      });
+    }
+    const rName = (user?.role?.name || (user as any)?.role || '').toLowerCase();
+    if (rName === 'admin') {
+      ['kitchen.view', 'menu.availability.update', 'tables.manage', 'orders.create', 'orders.view', 'orders.update', 'reports.view', 'billing.view', 'menu.view'].forEach((k) => keys.add(k));
+    } else if (rName === 'staff' || rName === 'waiter') {
+      ['tables.manage', 'orders.create', 'orders.view', 'orders.update', 'menu.view', 'billing.view'].forEach((k) => keys.add(k));
+    } else if (rName === 'chef') {
+      ['kitchen.view', 'kitchen.accept', 'kitchen.prepare', 'kitchen.mark_ready', 'menu.availability.update', 'menu.view'].forEach((k) => keys.add(k));
+    } else if (rName === 'manager') {
+      ['reports.view', 'billing.view', 'tables.manage', 'orders.view', 'menu.view', 'menu.availability.update'].forEach((k) => keys.add(k));
+    }
+    return keys;
+  }, [user]);
+
   const can = (key: string) => userPerms.has(key);
 
   const showKitchen = can('kitchen.view');
@@ -909,7 +895,7 @@ export default function App() {
         (dietFilter === 'non-veg' && item.isVeg === false);
       const matchesSearch =
         !q ||
-        item.name.toLowerCase().includes(q) ||
+        item.name?.toLowerCase().includes(q) ||
         (item.description && item.description.toLowerCase().includes(q)) ||
         (item.category?.name && item.category.name.toLowerCase().includes(q));
       return matchesCat && matchesDiet && matchesSearch;
@@ -940,169 +926,28 @@ export default function App() {
     return true;
   });
 
-  // Filtered Kitchen Tasks
   const filteredKitchenTasks = kitchenTasks.filter((task) => {
     if (kdsFilter === 'pending') return task.status === 'PENDING';
     if (kdsFilter === 'cooking') return task.status === 'ACCEPTED' || task.status === 'PREPARING';
     return true;
   });
 
-  // Filtered Availability Items
   const filteredAvailItems = availItems.filter((item) => {
     if (!availSearch.trim()) return true;
     const q = availSearch.trim().toLowerCase();
-    return item.name.toLowerCase().includes(q) || item.category?.name?.toLowerCase().includes(q);
+    return item.name?.toLowerCase().includes(q) || item.category?.name?.toLowerCase().includes(q);
   });
 
   // ─────────────────────────────────────────────
-  //  RENDER: Step 1 – Server Connection Setup
+  //  RENDER: Staff Sign In Screen
   // ─────────────────────────────────────────────
-  if (!serverConfigured) {
-    return (
-      <SafeAreaView style={S.safe}>
-        <StatusBar barStyle="light-content" backgroundColor="#050a14" />
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={S.loginScroll} keyboardShouldPersistTaps="handled">
-            {/* Brand Logo Header */}
-            <View style={S.loginBrand}>
-              <Text style={S.loginIcon}>🍽️</Text>
-              <Text style={S.loginName}>{settings.restaurant_name}</Text>
-              <Text style={S.loginTagline}>{settings.restaurant_tagline}</Text>
-              <View style={S.stepBadge}>
-                <Text style={S.stepBadgeTxt}>STEP 1: API ENDPOINT CONFIGURATION</Text>
-              </View>
-            </View>
-
-            {/* Server Connection Card */}
-            <Card title="SERVER API URL">
-              <Text style={S.inputSub}>
-                Enter the backend REST API endpoint URL or select a quick network preset below:
-              </Text>
-
-              <View style={S.serverRow}>
-                <TextInput
-                  style={[S.input, { flex: 1 }]}
-                  value={serverUrl}
-                  onChangeText={(v) => {
-                    setServerUrl(v);
-                    setServerStatus(null);
-                    setServerLatency(null);
-                  }}
-                  placeholder="https://dev.geoshcatechnologies.com/api"
-                  placeholderTextColor="#334155"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={[
-                    S.testBtn,
-                    serverStatus === 'ok' && S.testBtnOk,
-                    serverStatus === 'fail' && S.testBtnFail,
-                  ]}
-                  onPress={testServer}
-                  disabled={testingServer}
-                >
-                  {testingServer ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={S.testBtnTxt}>
-                      {serverStatus === 'ok' ? '✓ OK' : serverStatus === 'fail' ? '✗ Fail' : '⚡ Test'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* Status Banner */}
-              {serverStatus === 'ok' && (
-                <View style={S.statusBoxOk}>
-                  <Text style={S.serverOk}>
-                    🟢 Server Connected! Latency: {serverLatency}ms
-                  </Text>
-                  <Text style={S.statusDetails}>
-                    • Restaurant: {settings.restaurant_name}{'\n'}
-                    • Currency: {cur} | Tax: {taxPct}%
-                  </Text>
-                </View>
-              )}
-              {serverStatus === 'fail' && (
-                <View style={S.statusBoxFail}>
-                  <Text style={S.serverFail}>
-                    🔴 Cannot connect to {serverUrl}
-                  </Text>
-                  <Text style={S.statusDetailsFail}>
-                    Check network connection or ensure server port 3001 is active.
-                  </Text>
-                </View>
-              )}
-
-              {/* Server Presets */}
-              <Text style={[S.label, { marginTop: 16 }]}>NETWORK PRESETS</Text>
-              {PRESET_SERVERS.map((preset) => (
-                <TouchableOpacity
-                  key={preset.url}
-                  style={[
-                    S.presetBtn,
-                    serverUrl === preset.url && S.presetBtnActive,
-                  ]}
-                  onPress={() => {
-                    setServerUrl(preset.url);
-                    setServerStatus(null);
-                    setServerLatency(null);
-                  }}
-                >
-                  <Text style={[S.presetTxt, serverUrl === preset.url && S.presetTxtActive]}>
-                    {preset.label}
-                  </Text>
-                  <Text style={S.presetUrl}>{preset.url}</Text>
-                </TouchableOpacity>
-              ))}
-
-              {/* Primary Next Action */}
-              <TouchableOpacity
-                style={[
-                  S.primaryBtn,
-                  { marginTop: 20 },
-                  serverStatus !== 'ok' && { opacity: 0.8 },
-                ]}
-                onPress={handleProceedToLogin}
-              >
-                <Text style={S.primaryBtnTxt}>
-                  {serverStatus === 'ok' ? 'Proceed to Staff Login →' : 'Test & Proceed →'}
-                </Text>
-              </TouchableOpacity>
-            </Card>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  RENDER: Step 2 – Staff Login Screen
-  // ─────────────────────────────────────────────
-  if (!token) {
+  if (!token || !user) {
     const cleanHost = serverUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '');
     return (
       <SafeAreaView style={S.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#050a14" />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={S.loginScroll} keyboardShouldPersistTaps="handled">
-            {/* Top Server Indicator with Change Option */}
-            <View style={S.topServerBar}>
-              <View style={S.topServerIndicator}>
-                <View style={S.dotGreen} />
-                <Text style={S.topServerTxt} numberOfLines={1}>
-                  {cleanHost}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={S.changeServerBtn}
-                onPress={() => setServerConfigured(false)}
-              >
-                <Text style={S.changeServerTxt}>Change Server</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* Brand Logo Header */}
             <View style={S.loginBrand}>
               <Text style={S.loginIcon}>🍽️</Text>
@@ -1120,7 +965,7 @@ export default function App() {
                 style={S.input}
                 value={loginUsername}
                 onChangeText={setLoginUsername}
-                placeholder="e.g. chef, waiter, manager"
+                placeholder="e.g. waiter, chef, manager"
                 placeholderTextColor="#334155"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -1147,13 +992,13 @@ export default function App() {
               </TouchableOpacity>
             </Card>
 
-            {/* Quick 1-Click Role Login Chips */}
+            {/* Quick 1-Click Role Logins */}
             <View style={S.quickCard}>
               <Text style={S.quickLabel}>QUICK DEMO LOGINS</Text>
               <View style={S.quickGrid}>
                 {[
-                  { l: '👨‍🍳 Chef', u: 'chef', p: 'chef123' },
                   { l: '🛎️ Waiter', u: 'waiter', p: 'waiter123' },
+                  { l: '👨‍🍳 Chef', u: 'chef', p: 'chef123' },
                   { l: '📊 Manager', u: 'manager', p: 'manager123' },
                   { l: '👑 Admin', u: 'admin', p: 'admin123' },
                 ].map((r) => (
@@ -1171,8 +1016,108 @@ export default function App() {
                 ))}
               </View>
             </View>
+
+            {/* Subtle Server Switcher at Bottom */}
+            <TouchableOpacity
+              style={S.bottomServerBar}
+              onPress={() => {
+                setCustomServerInput(serverUrl);
+                setServerModalVisible(true);
+              }}
+            >
+              <View style={S.dotGreen} />
+              <Text style={S.bottomServerTxt} numberOfLines={1}>
+                Server: {cleanHost}
+              </Text>
+              <Text style={S.changeServerTxt}>⚙️ Configure</Text>
+            </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Server Configuration Modal */}
+        <Modal
+          visible={serverModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setServerModalVisible(false)}
+        >
+          <View style={S.modalOverlay}>
+            <View style={S.modalCard}>
+              <Text style={S.modalTitle}>Configure Server Endpoint</Text>
+              <Text style={S.modalSub}>Select or enter the backend REST API URL</Text>
+
+              <TextInput
+                style={S.input}
+                value={customServerInput}
+                onChangeText={(v) => {
+                  setCustomServerInput(v);
+                  setServerStatus(null);
+                }}
+                placeholder="https://dev.geoshcatechnologies.com/api"
+                placeholderTextColor="#475569"
+                autoCapitalize="none"
+              />
+
+              <View style={{ marginTop: 10 }}>
+                {PRESET_SERVERS.map((preset) => (
+                  <TouchableOpacity
+                    key={preset.url}
+                    style={[S.presetBtn, customServerInput === preset.url && S.presetBtnActive]}
+                    onPress={() => {
+                      setCustomServerInput(preset.url);
+                      setServerStatus(null);
+                    }}
+                  >
+                    <Text style={[S.presetTxt, customServerInput === preset.url && S.presetTxtActive]}>
+                      {preset.label}
+                    </Text>
+                    <Text style={S.presetUrl}>{preset.url}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {serverStatus === 'ok' && (
+                <Text style={{ color: C.success, fontSize: 11, marginTop: 8 }}>
+                  🟢 Reachable! Latency: {serverLatency}ms
+                </Text>
+              )}
+              {serverStatus === 'fail' && (
+                <Text style={{ color: C.danger, fontSize: 11, marginTop: 8 }}>
+                  🔴 Unreachable endpoint. Check network/URL.
+                </Text>
+              )}
+
+              <View style={S.modalBtns}>
+                <TouchableOpacity
+                  style={S.modalCancel}
+                  onPress={() => setServerModalVisible(false)}
+                >
+                  <Text style={S.modalCancelTxt}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[S.modalSave, { backgroundColor: C.info }]}
+                  onPress={() => testServerUrl(customServerInput)}
+                  disabled={testingServer}
+                >
+                  {testingServer ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={[S.modalSaveTxt, { color: '#fff' }]}>Test Ping</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={S.modalSave}
+                  onPress={() => {
+                    setServerUrl(customServerInput.trim().replace(/\/+$/, ''));
+                    setServerModalVisible(false);
+                  }}
+                >
+                  <Text style={S.modalSaveTxt}>Save URL</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
@@ -1184,7 +1129,7 @@ export default function App() {
     <SafeAreaView style={S.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#050a14" />
 
-      {/* ── Real-Time Toast Notification Banner ── */}
+      {/* Real-Time Toast Notification Banner */}
       {toast && (
         <Animated.View
           style={[
@@ -1195,11 +1140,7 @@ export default function App() {
             { transform: [{ translateY: toastAnim }] },
           ]}
         >
-          <TouchableOpacity
-            style={S.toastInner}
-            onPress={() => setToast(null)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={S.toastInner} onPress={() => setToast(null)} activeOpacity={0.8}>
             <View style={{ flex: 1 }}>
               <Text style={S.toastTitle}>{toast.title}</Text>
               <Text style={S.toastMessage}>{toast.message}</Text>
@@ -1209,16 +1150,16 @@ export default function App() {
         </Animated.View>
       )}
 
-      {/* ── App Header ── */}
+      {/* App Header */}
       <View style={S.header}>
         <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={S.headerTitle} numberOfLines={1}>
             {settings.restaurant_name}
           </Text>
           <View style={S.headerMeta}>
-            <Text style={S.headerUser}>👤 {user.name || user.username}</Text>
+            <Text style={S.headerUser}>👤 {user?.name || user?.username || 'Staff'}</Text>
             <View style={S.rolePill}>
-              <Text style={S.rolePillTxt}>{user.role?.displayName || user.role?.name}</Text>
+              <Text style={S.rolePillTxt}>{user?.role?.displayName || user?.role?.name || 'Staff'}</Text>
             </View>
           </View>
         </View>
@@ -1227,7 +1168,7 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Permission-Based Navigation Tabs ── */}
+      {/* Navigation Tabs */}
       <View style={S.tabBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.tabBarInner}>
           {showTables && (
@@ -1311,120 +1252,11 @@ export default function App() {
       </View>
 
       {/* ══════════════════════════════════════════════
-          CHEF ▶ Kitchen KDS Tab
-      ══════════════════════════════════════════════ */}
-      {showKitchen && activeTab === 'kitchen' && (
-        <ScrollView
-          style={S.content}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshingKitchen}
-              onRefresh={() => loadKitchen(token, true)}
-              tintColor="#d97706"
-            />
-          }
-        >
-          <SectionHeader
-            title="Kitchen Display System"
-            subtitle="Real-time order tickets with live status update"
-            count={filteredKitchenTasks.length}
-          />
-
-          {/* Filter Chips */}
-          <View style={S.chipRow}>
-            {[
-              { id: 'all', label: 'All Orders' },
-              { id: 'pending', label: '⏳ Pending' },
-              { id: 'cooking', label: '🔥 In Preparation' },
-            ].map((f) => (
-              <TouchableOpacity
-                key={f.id}
-                style={[S.chip, kdsFilter === f.id && S.chipActive]}
-                onPress={() => setKdsFilter(f.id as any)}
-              >
-                <Text style={[S.chipTxt, kdsFilter === f.id && S.chipTxtActive]}>{f.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {loadingKitchen ? (
-            <Loader />
-          ) : filteredKitchenTasks.length === 0 ? (
-            <Empty icon="👨‍🍳" msg="No active kitchen orders. All clear!" />
-          ) : (
-            filteredKitchenTasks.map((task) => (
-              <KDSCard key={task.id} task={task} onAction={kitchenAction} />
-            ))
-          )}
-        </ScrollView>
-      )}
-
-      {/* ══════════════════════════════════════════════
-          CHEF / MANAGER ▶ Menu Availability (Sold Out / 86)
-      ══════════════════════════════════════════════ */}
-      {showAvailability && activeTab === 'availability' && (
-        <ScrollView style={S.content}>
-          <SectionHeader
-            title="Menu Availability (86 Control)"
-            subtitle="Toggle items Sold Out in real-time across all waiter devices"
-            count={availItems.length}
-          />
-
-          {/* Search Bar for Availability */}
-          <View style={S.searchContainer}>
-            <TextInput
-              style={S.searchInput}
-              value={availSearch}
-              onChangeText={setAvailSearch}
-              placeholder="🔍 Search dish or category..."
-              placeholderTextColor="#475569"
-            />
-            {availSearch.length > 0 && (
-              <TouchableOpacity onPress={() => setAvailSearch('')} style={S.clearSearchBtn}>
-                <Text style={S.clearSearchTxt}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {loadingAvail ? (
-            <Loader />
-          ) : filteredAvailItems.length === 0 ? (
-            <Empty icon="📋" msg="No menu items matched your search." />
-          ) : (
-            filteredAvailItems.map((item) => {
-              const isAvail = item.availability?.isAvailable ?? true;
-              return (
-                <View key={item.id} style={S.availCard}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={S.availName}>
-                      {item.isVeg ? '🟢 ' : '🔴 '}
-                      {item.name}
-                    </Text>
-                    <Text style={S.availCat}>
-                      {item.category?.name ?? 'General'} • {cur}{item.price}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[S.availToggle, isAvail ? S.availOn : S.availOff]}
-                    onPress={() => toggleAvailability(item)}
-                  >
-                    <Text style={S.availToggleTxt}>
-                      {isAvail ? '✓ Available' : '🚫 Sold Out (86)'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-      )}
-
-      {/* ══════════════════════════════════════════════
           WAITER ▶ Floors & Tables Tab
       ══════════════════════════════════════════════ */}
       {showTables && activeTab === 'tables' && (
         <ScrollView style={S.content}>
-          {floors.length > 0 && (
+          {floors && floors.length > 0 && (
             <>
               <Text style={S.label}>FLOOR / SECTION</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.chipRow}>
@@ -1434,7 +1266,11 @@ export default function App() {
                     style={[S.chip, selectedFloorId === f.id && S.chipActive]}
                     onPress={() => {
                       setSelectedFloorId(f.id);
-                      loadTables(f.id);
+                      if (Array.isArray(f.tables) && f.tables.length > 0) {
+                        setTables(f.tables);
+                      } else {
+                        loadTables(f.id);
+                      }
                     }}
                   >
                     <Text style={[S.chipTxt, selectedFloorId === f.id && S.chipTxtActive]}>
@@ -1453,9 +1289,9 @@ export default function App() {
             </TouchableOpacity>
           </View>
 
-          {loadingTables ? (
+          {loadingTables && (!tables || tables.length === 0) ? (
             <Loader />
-          ) : tables.length === 0 ? (
+          ) : !tables || tables.length === 0 ? (
             <Empty icon="🪑" msg="No tables configured on this floor." />
           ) : (
             <View style={S.tablesGrid}>
@@ -1472,21 +1308,12 @@ export default function App() {
                 return (
                   <TouchableOpacity
                     key={t.id}
-                    style={[
-                      S.tableCard,
-                      { borderColor: tColor },
-                      isSelected && S.tableCardSelected,
-                    ]}
+                    style={[S.tableCard, { borderColor: tColor }, isSelected && S.tableCardSelected]}
                     onPress={() => selectTable(t)}
                   >
                     <Text style={S.tableNum}>Table {t.tableNumber}</Text>
                     <Text style={S.tableSeats}>👥 {t.seatingCapacity} Seats</Text>
-                    <View
-                      style={[
-                        S.tableStatusPill,
-                        { backgroundColor: tColor + '25', borderColor: tColor },
-                      ]}
-                    >
+                    <View style={[S.tableStatusPill, { backgroundColor: tColor + '25', borderColor: tColor }]}>
                       <Text style={[S.tableStatusTxt, { color: tColor }]}>
                         {t.status === 'AVAILABLE'
                           ? 'Available'
@@ -1510,14 +1337,11 @@ export default function App() {
       ══════════════════════════════════════════════ */}
       {showOrder && activeTab === 'order' && (
         <View style={{ flex: 1 }}>
-          {/* Table Context Banner */}
           <View style={[S.tableBanner, !selectedTable && S.tableBannerWarn]}>
             {selectedTable ? (
               <Text style={S.tableBannerTxt}>
                 📍 Table {selectedTable.tableNumber}
-                {activeOrder
-                  ? `  •  Running Order #${activeOrder.orderNumber}`
-                  : '  •  New Order'}
+                {activeOrder ? `  •  Running Order #${activeOrder.orderNumber}` : '  •  New Order'}
               </Text>
             ) : (
               <Text style={S.tableBannerWarnTxt}>
@@ -1527,13 +1351,10 @@ export default function App() {
           </View>
 
           <ScrollView style={S.content}>
-            {/* Running Active Order Section */}
             {activeOrder && (
               <View style={S.activeOrderBox}>
                 <View style={S.activeOrderHeader}>
-                  <Text style={S.activeOrderTitle}>
-                    🍽️ Running Order #{activeOrder.orderNumber}
-                  </Text>
+                  <Text style={S.activeOrderTitle}>🍽️ Running Order #{activeOrder.orderNumber}</Text>
                   <Text style={S.activeOrderTotal}>
                     {cur}{(+activeOrder.totalAmount || 0).toFixed(2)}
                   </Text>
@@ -1546,12 +1367,7 @@ export default function App() {
                   return (
                     <View key={it.id} style={[S.activeOrderRow, isCancelled && { opacity: 0.5 }]}>
                       <View style={{ flex: 1, marginRight: 8 }}>
-                        <Text
-                          style={[
-                            S.activeItemName,
-                            isCancelled && { textDecorationLine: 'line-through', color: '#94a3b8' },
-                          ]}
-                        >
+                        <Text style={[S.activeItemName, isCancelled && { textDecorationLine: 'line-through', color: '#94a3b8' }]}>
                           {it.quantity}× {it.foodItem?.name}
                         </Text>
                         <Text
@@ -1574,18 +1390,12 @@ export default function App() {
 
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         {isReady && !isCancelled && (
-                          <TouchableOpacity
-                            style={S.serveSmall}
-                            onPress={() => markDelivered(it.id, it.foodItem?.name)}
-                          >
+                          <TouchableOpacity style={S.serveSmall} onPress={() => markDelivered(it.id, it.foodItem?.name)}>
                             <Text style={S.serveSmallTxt}>Serve</Text>
                           </TouchableOpacity>
                         )}
                         {!isDone && !isCancelled && (
-                          <TouchableOpacity
-                            style={S.cancelItemSmall}
-                            onPress={() => cancelOrderItem(it.id, it.foodItem?.name)}
-                          >
+                          <TouchableOpacity style={S.cancelItemSmall} onPress={() => cancelOrderItem(it.id, it.foodItem?.name)}>
                             <Text style={S.cancelItemTxt}>✕</Text>
                           </TouchableOpacity>
                         )}
@@ -1594,10 +1404,8 @@ export default function App() {
                   );
                 })}
 
-                {/* Request Bill Button */}
                 {(() => {
-                  const isBillReq =
-                    selectedTable?.status === 'BILLING' || activeOrder?.table?.status === 'BILLING';
+                  const isBillReq = selectedTable?.status === 'BILLING' || activeOrder?.table?.status === 'BILLING';
                   if (!isBillReq) {
                     return (
                       <TouchableOpacity
@@ -1613,16 +1421,13 @@ export default function App() {
                   }
                   return (
                     <View style={S.billingNote}>
-                      <Text style={S.billingNoteTxt}>
-                        🧾 Bill requested — Cashier/Manager has been alerted.
-                      </Text>
+                      <Text style={S.billingNoteTxt}>🧾 Bill requested — Cashier/Manager has been alerted.</Text>
                     </View>
                   );
                 })()}
               </View>
             )}
 
-            {/* Menu Search Bar */}
             <Text style={S.label}>SEARCH MENU DISHES</Text>
             <View style={S.searchContainer}>
               <TextInput
@@ -1649,7 +1454,6 @@ export default function App() {
               )}
             </View>
 
-            {/* Dietary Type Filter */}
             <View style={S.dietRow}>
               <TouchableOpacity
                 style={[S.dietChip, dietFilter === 'all' && S.dietChipActive]}
@@ -1658,9 +1462,7 @@ export default function App() {
                   setMenuPage(1);
                 }}
               >
-                <Text style={[S.dietChipTxt, dietFilter === 'all' && S.dietChipTxtActive]}>
-                  All Menu
-                </Text>
+                <Text style={[S.dietChipTxt, dietFilter === 'all' && S.dietChipTxtActive]}>All Menu</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[S.dietChip, dietFilter === 'veg' && S.dietChipVegActive]}
@@ -1686,7 +1488,6 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            {/* Category Filter Chips */}
             <Text style={S.label}>CATEGORIES</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.chipRow}>
               <TouchableOpacity
@@ -1719,11 +1520,8 @@ export default function App() {
               })}
             </ScrollView>
 
-            {/* Menu Items List with Pagination */}
             <View style={S.menuHeaderRow}>
-              <Text style={S.menuListHeaderTitle}>
-                Dishes ({filteredMenu.length})
-              </Text>
+              <Text style={S.menuListHeaderTitle}>Dishes ({filteredMenu.length})</Text>
               {filteredMenu.length > ITEMS_PER_PAGE && (
                 <Text style={S.pageIndicatorTxt}>
                   Page {menuPage} of {totalPages}
@@ -1766,7 +1564,6 @@ export default function App() {
                       ) : null}
                     </View>
 
-                    {/* Cart Controls or Sold Out Badge */}
                     {isSoldOut ? (
                       <View style={S.soldOutBtn}>
                         <Text style={S.soldOutBtnTxt}>Sold Out</Text>
@@ -1794,7 +1591,6 @@ export default function App() {
               })
             )}
 
-            {/* Menu Pagination Controls */}
             {totalPages > 1 && (
               <View style={S.paginationContainer}>
                 <TouchableOpacity
@@ -1802,9 +1598,7 @@ export default function App() {
                   onPress={() => setMenuPage((p) => Math.max(1, p - 1))}
                   disabled={menuPage <= 1}
                 >
-                  <Text style={[S.pageBtnTxt, menuPage <= 1 && S.pageBtnTxtDisabled]}>
-                    ◀ Previous
-                  </Text>
+                  <Text style={[S.pageBtnTxt, menuPage <= 1 && S.pageBtnTxtDisabled]}>◀ Previous</Text>
                 </TouchableOpacity>
 
                 <Text style={S.pageStatusTxt}>
@@ -1816,9 +1610,7 @@ export default function App() {
                   onPress={() => setMenuPage((p) => Math.min(totalPages, p + 1))}
                   disabled={menuPage >= totalPages}
                 >
-                  <Text style={[S.pageBtnTxt, menuPage >= totalPages && S.pageBtnTxtDisabled]}>
-                    Next ▶
-                  </Text>
+                  <Text style={[S.pageBtnTxt, menuPage >= totalPages && S.pageBtnTxtDisabled]}>Next ▶</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -1826,7 +1618,6 @@ export default function App() {
             <View style={{ height: 100 }} />
           </ScrollView>
 
-          {/* Sticky Bottom Cart Bar */}
           {cartEntries.length > 0 && (
             <View style={S.cartBar}>
               <View>
@@ -1871,7 +1662,6 @@ export default function App() {
             subtitle="Pull down to refresh • Serve items when ready"
           />
 
-          {/* Filter Chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.chipRow}>
             {([
               { k: 'ready', l: '🔔 Ready to Serve' },
@@ -1905,26 +1695,11 @@ export default function App() {
               const isReady = item.status === 'READY';
               const isDone = item.status === 'DELIVERED';
               return (
-                <View
-                  key={item.id}
-                  style={[S.servCard, isReady && S.servCardReadyBorder]}
-                >
+                <View key={item.id} style={[S.servCard, isReady && S.servCardReadyBorder]}>
                   <View style={S.servHeader}>
                     <Text style={S.servTable}>Table {order?.table?.tableNumber ?? 'Takeaway'}</Text>
-                    <View
-                      style={[
-                        S.servPill,
-                        isReady && S.servPillReady,
-                        isDone && S.servPillDone,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          S.servPillTxt,
-                          isReady && S.servPillTxtReady,
-                          isDone && S.servPillTxtDone,
-                        ]}
-                      >
+                    <View style={[S.servPill, isReady && S.servPillReady, isDone && S.servPillDone]}>
+                      <Text style={[S.servPillTxt, isReady && S.servPillTxtReady, isDone && S.servPillTxtDone]}>
                         {isDone ? '✅ SERVED' : isReady ? '🔔 READY' : `⏳ ${item.status}`}
                       </Text>
                     </View>
@@ -1951,6 +1726,113 @@ export default function App() {
                       <Text style={S.doneTxt}>✓ Served to Table {order?.table?.tableNumber}</Text>
                     </View>
                   )}
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          CHEF ▶ Kitchen KDS Tab
+      ══════════════════════════════════════════════ */}
+      {showKitchen && activeTab === 'kitchen' && (
+        <ScrollView
+          style={S.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshingKitchen}
+              onRefresh={() => loadKitchen(token, true)}
+              tintColor="#d97706"
+            />
+          }
+        >
+          <SectionHeader
+            title="Kitchen Display System"
+            subtitle="Real-time order tickets with live status update"
+            count={filteredKitchenTasks.length}
+          />
+
+          <View style={S.chipRow}>
+            {[
+              { id: 'all', label: 'All Orders' },
+              { id: 'pending', label: '⏳ Pending' },
+              { id: 'cooking', label: '🔥 In Preparation' },
+            ].map((f) => (
+              <TouchableOpacity
+                key={f.id}
+                style={[S.chip, kdsFilter === f.id && S.chipActive]}
+                onPress={() => setKdsFilter(f.id as any)}
+              >
+                <Text style={[S.chipTxt, kdsFilter === f.id && S.chipTxtActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {loadingKitchen ? (
+            <Loader />
+          ) : filteredKitchenTasks.length === 0 ? (
+            <Empty icon="👨‍🍳" msg="No active kitchen orders. All clear!" />
+          ) : (
+            filteredKitchenTasks.map((task) => (
+              <KDSCard key={task.id} task={task} onAction={kitchenAction} />
+            ))
+          )}
+        </ScrollView>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          CHEF / MANAGER ▶ Menu Availability (Sold Out / 86)
+      ══════════════════════════════════════════════ */}
+      {showAvailability && activeTab === 'availability' && (
+        <ScrollView style={S.content}>
+          <SectionHeader
+            title="Menu Availability (86 Control)"
+            subtitle="Toggle items Sold Out in real-time across all waiter devices"
+            count={availItems.length}
+          />
+
+          <View style={S.searchContainer}>
+            <TextInput
+              style={S.searchInput}
+              value={availSearch}
+              onChangeText={setAvailSearch}
+              placeholder="🔍 Search dish or category..."
+              placeholderTextColor="#475569"
+            />
+            {availSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setAvailSearch('')} style={S.clearSearchBtn}>
+                <Text style={S.clearSearchTxt}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {loadingAvail ? (
+            <Loader />
+          ) : filteredAvailItems.length === 0 ? (
+            <Empty icon="📋" msg="No menu items matched your search." />
+          ) : (
+            filteredAvailItems.map((item) => {
+              const isAvail = item.availability?.isAvailable ?? true;
+              return (
+                <View key={item.id} style={S.availCard}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={S.availName}>
+                      {item.isVeg ? '🟢 ' : '🔴 '}
+                      {item.name}
+                    </Text>
+                    <Text style={S.availCat}>
+                      {item.category?.name ?? 'General'} • {cur}{item.price}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[S.availToggle, isAvail ? S.availOn : S.availOff]}
+                    onPress={() => toggleAvailability(item)}
+                  >
+                    <Text style={S.availToggleTxt}>
+                      {isAvail ? '✓ Available' : '🚫 Sold Out (86)'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               );
             })
@@ -2088,18 +1970,13 @@ export default function App() {
             <>
               {billableOrders.length > 0 && (
                 <>
-                  <SLabel>
-                    TABLES READY FOR BILL GENERATION ({billableOrders.length})
-                  </SLabel>
+                  <SLabel>TABLES READY FOR BILL GENERATION ({billableOrders.length})</SLabel>
                   {billableOrders.map((order) => {
                     const isRequested = order.table?.status === 'BILLING';
                     return (
                       <View
                         key={order.id}
-                        style={[
-                          S.billableCard,
-                          isRequested && S.billableCardRequested,
-                        ]}
+                        style={[S.billableCard, isRequested && S.billableCardRequested]}
                       >
                         <View style={S.billableTop}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -2120,10 +1997,7 @@ export default function App() {
                         <Text style={S.billableInfo}>
                           {order.items?.length ?? 0} items • Waiter: {order.waiter?.name ?? 'Staff'}
                         </Text>
-                        <TouchableOpacity
-                          style={S.genBillBtn}
-                          onPress={() => generateBill(order.id)}
-                        >
+                        <TouchableOpacity style={S.genBillBtn} onPress={() => generateBill(order.id)}>
                           <Text style={S.genBillTxt}>🧾 Generate Bill</Text>
                         </TouchableOpacity>
                       </View>
@@ -2144,27 +2018,19 @@ export default function App() {
                         style={[
                           S.billPill,
                           bill.status === 'PAID' && S.billPillPaid,
-                          (bill.status === 'UNPAID' || bill.status === 'PENDING') &&
-                            S.billPillPending,
+                          (bill.status === 'UNPAID' || bill.status === 'PENDING') && S.billPillPending,
                         ]}
                       >
                         <Text style={S.billPillTxt}>{bill.status}</Text>
                       </View>
                     </View>
                     <Text style={S.billMeta}>
-                      Table {bill.order?.table?.tableNumber ?? '?'} •{' '}
-                      {new Date(bill.createdAt).toLocaleDateString()}
+                      Table {bill.order?.table?.tableNumber ?? '?'} • {new Date(bill.createdAt).toLocaleDateString()}
                     </Text>
-                    <Text style={S.billLine}>
-                      Subtotal: {cur}{(+bill.subtotal || 0).toFixed(2)}
-                    </Text>
-                    <Text style={S.billLine}>
-                      Tax: {cur}{(+bill.taxAmount || 0).toFixed(2)}
-                    </Text>
+                    <Text style={S.billLine}>Subtotal: {cur}{(+bill.subtotal || 0).toFixed(2)}</Text>
+                    <Text style={S.billLine}>Tax: {cur}{(+bill.taxAmount || 0).toFixed(2)}</Text>
                     {bill.discountAmount > 0 && (
-                      <Text style={S.billLine}>
-                        Discount: -{cur}{(+bill.discountAmount).toFixed(2)}
-                      </Text>
+                      <Text style={S.billLine}>Discount: -{cur}{(+bill.discountAmount).toFixed(2)}</Text>
                     )}
                     <Text style={S.billTotal}>
                       TOTAL: {cur}{(+bill.totalAmount || +bill.grandTotal || 0).toFixed(2)}
@@ -2175,9 +2041,7 @@ export default function App() {
                       </TouchableOpacity>
                     )}
                     {bill.status === 'PAID' && (
-                      <Text style={S.paidInfo}>
-                        ✅ Paid via {bill.payment?.paymentMethod ?? 'CASH'}
-                      </Text>
+                      <Text style={S.paidInfo}>✅ Paid via {bill.payment?.paymentMethod ?? 'CASH'}</Text>
                     )}
                   </View>
                 ))
@@ -2187,11 +2051,7 @@ export default function App() {
         </ScrollView>
       )}
 
-      {/* ══════════════════════════════════════════════
-          MODALS
-      ══════════════════════════════════════════════ */}
-
-      {/* Item Custom Instructions Note Modal */}
+      {/* Special Cooking Note Modal */}
       <Modal
         visible={!!noteModalItem}
         transparent
@@ -2212,10 +2072,7 @@ export default function App() {
               maxLength={200}
             />
             <View style={S.modalBtns}>
-              <TouchableOpacity
-                style={S.modalCancel}
-                onPress={() => setNoteModalItem(null)}
-              >
+              <TouchableOpacity style={S.modalCancel} onPress={() => setNoteModalItem(null)}>
                 <Text style={S.modalCancelTxt}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={S.modalSave} onPress={saveNote}>
@@ -2237,8 +2094,8 @@ export default function App() {
           <View style={S.modalCard}>
             <Text style={S.modalTitle}>Settle Payment</Text>
             <Text style={S.modalSub}>
-              Bill #{payModal?.billNumber} • Total:{' '}
-              {cur}{(+payModal?.totalAmount || +payModal?.grandTotal || 0).toFixed(2)}
+              Bill #{payModal?.billNumber} • Total: {cur}
+              {(+payModal?.totalAmount || +payModal?.grandTotal || 0).toFixed(2)}
             </Text>
             <Text style={[S.label, { marginTop: 16 }]}>PAYMENT MODE</Text>
             <View style={S.payMethodRow}>
@@ -2258,10 +2115,7 @@ export default function App() {
               <TouchableOpacity style={S.modalCancel} onPress={() => setPayModal(null)}>
                 <Text style={S.modalCancelTxt}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={S.modalSave}
-                onPress={() => recordPayment(payModal)}
-              >
+              <TouchableOpacity style={S.modalSave} onPress={() => recordPayment(payModal)}>
                 <Text style={S.modalSaveTxt}>Confirm Payment</Text>
               </TouchableOpacity>
             </View>
@@ -2275,7 +2129,6 @@ export default function App() {
 // ─────────────────────────────────────────────
 //  Reusable Subcomponents
 // ─────────────────────────────────────────────
-
 function Tab({
   label,
   tab,
@@ -2367,9 +2220,7 @@ function KDSCard({
   return (
     <View style={[S.kdsCard, { borderLeftColor: c }]}>
       <View style={S.kdsHeader}>
-        <Text style={S.kdsTable}>
-          Table {task.order?.table?.tableNumber ?? 'Takeaway'}
-        </Text>
+        <Text style={S.kdsTable}>Table {task.order?.table?.tableNumber ?? 'Takeaway'}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={[S.kdsTimer, elapsedMinutes > 15 && { color: '#ef4444' }]}>
             ⏱ {elapsedMinutes}m ago
@@ -2384,16 +2235,11 @@ function KDSCard({
         {task.quantity}× {task.foodItem?.name}
       </Text>
 
-      {task.specialInstructions ? (
-        <Text style={S.kdsNote}>📝 {task.specialInstructions}</Text>
-      ) : null}
+      {task.specialInstructions ? <Text style={S.kdsNote}>📝 {task.specialInstructions}</Text> : null}
 
       <Text style={S.kdsTime}>
         Order #{task.order?.orderNumber} • Placed at{' '}
-        {new Date(task.createdAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
+        {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
 
       <View style={{ marginTop: 10 }}>
@@ -2452,7 +2298,7 @@ function StatCard({
 }
 
 // ─────────────────────────────────────────────
-//  Design Tokens & Colors
+//  Design Tokens & Styles
 // ─────────────────────────────────────────────
 const C = {
   bg: '#050a14',
@@ -2469,14 +2315,11 @@ const C = {
   purple: '#8b5cf6',
 };
 
-// ─────────────────────────────────────────────
-//  Styles
-// ─────────────────────────────────────────────
 const S = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   content: { flex: 1, padding: 16 },
 
-  // Toast Notification
+  // Toast
   toastContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 44 : 20,
@@ -2500,9 +2343,9 @@ const S = StyleSheet.create({
   toastMessage: { color: '#cbd5e1', fontSize: 12, marginTop: 2 },
   toastClose: { color: '#94a3b8', fontSize: 16, paddingHorizontal: 6 },
 
-  // Login & Setup
+  // Login
   loginScroll: { padding: 20, paddingBottom: 40 },
-  loginBrand: { alignItems: 'center', marginTop: 16, marginBottom: 20 },
+  loginBrand: { alignItems: 'center', marginTop: 20, marginBottom: 20 },
   loginIcon: { fontSize: 48 },
   loginName: { fontSize: 22, fontWeight: '900', color: C.txt, marginTop: 10, textAlign: 'center' },
   loginTagline: { fontSize: 12, color: C.txtSec, textAlign: 'center', marginTop: 4 },
@@ -2512,8 +2355,8 @@ const S = StyleSheet.create({
     borderColor: C.accent,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   stepBadgeTxt: { color: C.accent, fontSize: 10, fontWeight: '800' },
   card: {
@@ -2525,53 +2368,6 @@ const S = StyleSheet.create({
     borderColor: C.bdr,
   },
   cardTitle: { fontSize: 10, fontWeight: '800', color: C.txtMuted, letterSpacing: 1.5, marginBottom: 12 },
-  inputSub: { fontSize: 11, color: C.txtSec, marginBottom: 10, lineHeight: 16 },
-  serverRow: { flexDirection: 'row', gap: 8 },
-  testBtn: {
-    backgroundColor: C.surfHi,
-    borderWidth: 1,
-    borderColor: C.bdr,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    minWidth: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  testBtnOk: { borderColor: C.success, backgroundColor: '#14532d33' },
-  testBtnFail: { borderColor: C.danger, backgroundColor: '#7f1d1d33' },
-  testBtnTxt: { color: C.txt, fontSize: 12, fontWeight: '800' },
-  statusBoxOk: {
-    backgroundColor: '#052e16',
-    borderWidth: 1,
-    borderColor: C.success,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10,
-  },
-  statusBoxFail: {
-    backgroundColor: '#450a0a',
-    borderWidth: 1,
-    borderColor: C.danger,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10,
-  },
-  serverOk: { color: C.success, fontSize: 12, fontWeight: '700' },
-  statusDetails: { color: '#86efac', fontSize: 10, marginTop: 4 },
-  serverFail: { color: C.danger, fontSize: 12, fontWeight: '700' },
-  statusDetailsFail: { color: '#fca5a5', fontSize: 10, marginTop: 4 },
-  presetBtn: {
-    backgroundColor: C.surfHi,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: C.bdr,
-  },
-  presetBtnActive: { borderColor: C.accent, backgroundColor: C.accent + '15' },
-  presetTxt: { color: C.txt, fontSize: 12, fontWeight: '700' },
-  presetTxtActive: { color: C.accent },
-  presetUrl: { color: C.txtMuted, fontSize: 10, marginTop: 2 },
   label: { fontSize: 10, fontWeight: '800', color: C.txtMuted, letterSpacing: 1.2, marginBottom: 6 },
   input: {
     backgroundColor: C.bg,
@@ -2591,23 +2387,6 @@ const S = StyleSheet.create({
     marginTop: 14,
   },
   primaryBtnTxt: { color: '#020617', fontWeight: '800', fontSize: 15 },
-  topServerBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: C.surf,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: C.bdr,
-  },
-  topServerIndicator: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
-  dotGreen: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.success },
-  topServerTxt: { color: C.txtSec, fontSize: 11, fontWeight: '600' },
-  changeServerBtn: { backgroundColor: C.surfHi, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  changeServerTxt: { color: C.accent, fontSize: 10, fontWeight: '700' },
   quickCard: { backgroundColor: C.surf, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: C.bdr },
   quickLabel: { fontSize: 10, fontWeight: '800', color: C.txtMuted, letterSpacing: 1.5, marginBottom: 8 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -2622,6 +2401,37 @@ const S = StyleSheet.create({
   },
   quickChipTxt: { color: C.txt, fontSize: 12, fontWeight: '700' },
   quickChipSub: { color: C.txtMuted, fontSize: 10, marginTop: 2 },
+
+  // Bottom Server Indicator
+  bottomServerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: C.surf,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.bdr,
+  },
+  dotGreen: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.success },
+  bottomServerTxt: { color: C.txtSec, fontSize: 11, fontWeight: '600' },
+  changeServerTxt: { color: C.accent, fontSize: 11, fontWeight: '700' },
+
+  presetBtn: {
+    backgroundColor: C.surfHi,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: C.bdr,
+  },
+  presetBtnActive: { borderColor: C.accent, backgroundColor: C.accent + '15' },
+  presetTxt: { color: C.txt, fontSize: 12, fontWeight: '700' },
+  presetTxtActive: { color: C.accent },
+  presetUrl: { color: C.txtMuted, fontSize: 10, marginTop: 2 },
 
   // App Header
   header: {
@@ -2656,7 +2466,7 @@ const S = StyleSheet.create({
   },
   logoutTxt: { color: C.danger, fontWeight: '800', fontSize: 11 },
 
-  // Navigation Tabs
+  // Tabs
   tabBar: { backgroundColor: C.surf, borderBottomWidth: 1, borderBottomColor: C.bdr, maxHeight: 46 },
   tabBarInner: { paddingHorizontal: 8 },
   tab: { paddingHorizontal: 14, paddingVertical: 12, marginHorizontal: 2 },
@@ -2664,7 +2474,7 @@ const S = StyleSheet.create({
   tabTxt: { color: C.txtSec, fontSize: 12, fontWeight: '600' },
   tabTxtActive: { color: C.accent, fontWeight: '800' },
 
-  // Section Headers
+  // Sections
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: C.txt },
   sectionSub: { fontSize: 11, color: C.txtMuted, marginBottom: 8 },
@@ -2681,7 +2491,7 @@ const S = StyleSheet.create({
   refreshBtn: { backgroundColor: C.surfHi, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.bdr },
   refreshTxt: { color: C.accent, fontSize: 11, fontWeight: '800' },
 
-  // Filter Chips
+  // Chips
   chipRow: { flexDirection: 'row', marginBottom: 12 },
   chip: {
     backgroundColor: C.surfHi,
@@ -2696,7 +2506,7 @@ const S = StyleSheet.create({
   chipTxt: { color: C.txtSec, fontSize: 12, fontWeight: '600' },
   chipTxtActive: { color: '#020617', fontWeight: '800' },
 
-  // Search Bar
+  // Search
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2711,7 +2521,7 @@ const S = StyleSheet.create({
   clearSearchBtn: { padding: 4 },
   clearSearchTxt: { color: C.txtSec, fontSize: 13, fontWeight: '700' },
 
-  // Diet Filter
+  // Diet
   dietRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   dietChip: {
     flex: 1,
@@ -2728,7 +2538,7 @@ const S = StyleSheet.create({
   dietChipTxt: { color: C.txtSec, fontSize: 11, fontWeight: '700' },
   dietChipTxtActive: { color: '#020617', fontWeight: '800' },
 
-  // Tables Grid
+  // Tables
   tablesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
   tableCard: {
     width: '48%',
@@ -2749,7 +2559,7 @@ const S = StyleSheet.create({
   tableBannerTxt: { color: C.accent, fontWeight: '700', fontSize: 12 },
   tableBannerWarnTxt: { color: '#f97316', fontWeight: '700', fontSize: 12 },
 
-  // Active Order Box
+  // Active Order
   activeOrderBox: {
     backgroundColor: C.surf,
     borderRadius: 14,
@@ -2782,7 +2592,7 @@ const S = StyleSheet.create({
   billingNote: { backgroundColor: C.info + '15', borderRadius: 8, padding: 8, marginTop: 8 },
   billingNoteTxt: { color: C.info, fontSize: 11, textAlign: 'center' },
 
-  // Menu List & Card
+  // Menu List
   menuHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   menuListHeaderTitle: { color: C.txtSec, fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   pageIndicatorTxt: { color: C.accent, fontSize: 11, fontWeight: '700' },

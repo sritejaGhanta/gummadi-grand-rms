@@ -2,7 +2,7 @@
   "expo": {
     "name": "Gummadi Grand RMS",
     "slug": "rms-restaurant-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.gummadigrand.rms",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#d97706"
       }
