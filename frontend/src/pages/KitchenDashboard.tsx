@@ -25,6 +25,7 @@ import {
   History,
   X,
   FastForward,
+  Bell,
 } from 'lucide-react';
 
 export const KitchenDashboard: React.FC = () => {
@@ -63,27 +64,45 @@ export const KitchenDashboard: React.FC = () => {
 
   // Notifications
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [incomingAlert, setIncomingAlert] = useState<{ title: string; subtitle: string; time: string } | null>(null);
 
   // Sound chime using Web Audio API
   const playChime = () => {
     if (!soundEnabled) return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const now = ctx.currentTime;
+      // High-audibility two-tone KDS chime (E5 -> A5 Ding-Dong)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      const gain2 = ctx.createGain();
+
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(587.33, now); // D5
+      osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+      gain1.gain.setValueAtTime(0.45, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.5);
+
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1174.66, now + 0.18); // D6
+      gain2.gain.setValueAtTime(0.4, now + 0.18);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.18);
+      osc2.stop(now + 0.8);
     } catch (e) {
-      // Audio autoplay policy fallback
+      console.warn('Audio chime error:', e);
     }
   };
 
@@ -148,6 +167,15 @@ export const KitchenDashboard: React.FC = () => {
     ) {
       if (lastEvent.type === 'kitchen:new_order' || lastEvent.type === 'order:created') {
         playChime();
+        const orderInfo = lastEvent.data;
+        const tbl = orderInfo?.table?.tableNumber || orderInfo?.tableNumber || 'Takeaway';
+        const ordNum = orderInfo?.orderNumber || '';
+        const count = orderInfo?.items?.length || 1;
+        setIncomingAlert({
+          title: `🔥 NEW KOT ORDER: Table ${tbl}`,
+          subtitle: `Order #${ordNum} (${count} item${count > 1 ? 's' : ''}) sent to kitchen!`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        });
       }
       loadTasks();
     }
@@ -376,6 +404,27 @@ export const KitchenDashboard: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-4.2rem)] flex flex-col p-3 md:p-5 gap-3.5 overflow-hidden bg-slate-950 text-slate-100 select-none">
+      {/* INCOMING KOT BANNER POPUP */}
+      {incomingAlert && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white shadow-2xl flex items-center justify-between gap-3 animate-pulse shrink-0 border-2 border-white/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+              <Flame className="w-6 h-6 text-yellow-300 animate-bounce" />
+            </div>
+            <div>
+              <h4 className="font-black text-sm tracking-wide text-white">{incomingAlert.title}</h4>
+              <p className="text-xs text-amber-100 font-medium">{incomingAlert.subtitle} • {incomingAlert.time}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIncomingAlert(null)}
+            className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-black/60 text-white font-bold text-xs border border-white/25 transition shadow"
+          >
+            Acknowledge ✕
+          </button>
+        </div>
+      )}
+
       {/* Toast Alert */}
       {actionSuccess && (
         <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold flex items-center gap-2 shadow-xl shrink-0 animate-fadeIn">
@@ -442,6 +491,20 @@ export const KitchenDashboard: React.FC = () => {
 
         {/* Right Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          {/* Test Bell Button */}
+          <button
+            onClick={() => {
+              playChime();
+              setActionSuccess('🔔 Bell Sound Tested & Audio Enabled!');
+              setTimeout(() => setActionSuccess(null), 3000);
+            }}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs flex items-center gap-1.5 border border-amber-500/30 transition shadow-sm"
+            title="Click to test Kitchen Bell Audio"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Test Bell</span>
+          </button>
+
           {/* Active Chef Selector */}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-900 border border-slate-700/80">
             <ChefHat className="w-3.5 h-3.5 text-amber-400 shrink-0" />

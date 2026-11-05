@@ -119,47 +119,47 @@ let waiterSound: Audio.Sound | null = null;
 
 async function playKitchenChime() {
   try {
-    Vibration.vibrate([0, 300, 150, 300]);
-    if (!kitchenSound) {
-      const { sound } = await Audio.Sound.createAsync(
-        require('./assets/kitchen_bell.wav'),
-        { shouldPlay: true },
-      );
-      kitchenSound = sound;
-      kitchenSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          kitchenSound?.unloadAsync();
-          kitchenSound = null;
-        }
-      });
-    } else {
-      await kitchenSound.replayAsync();
-    }
+    Vibration.vibrate([0, 350, 150, 350]);
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: false,
+    });
+    const { sound } = await Audio.Sound.createAsync(
+      require('./assets/kitchen_bell.wav'),
+      { shouldPlay: true, volume: 1.0 },
+    );
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
   } catch (err) {
     console.log('Kitchen chime error:', err);
+    Vibration.vibrate([0, 400, 150, 400]);
   }
 }
 
 async function playWaiterChime() {
   try {
-    Vibration.vibrate(350);
-    if (!waiterSound) {
-      const { sound } = await Audio.Sound.createAsync(
-        require('./assets/waiter_ready.wav'),
-        { shouldPlay: true },
-      );
-      waiterSound = sound;
-      waiterSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          waiterSound?.unloadAsync();
-          waiterSound = null;
-        }
-      });
-    } else {
-      await waiterSound.replayAsync();
-    }
+    Vibration.vibrate([0, 250, 100, 250]);
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: false,
+    });
+    const { sound } = await Audio.Sound.createAsync(
+      require('./assets/waiter_ready.wav'),
+      { shouldPlay: true, volume: 1.0 },
+    );
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
   } catch (err) {
     console.log('Waiter chime error:', err);
+    Vibration.vibrate([0, 300, 100, 300]);
   }
 }
 
@@ -298,9 +298,9 @@ export default function App() {
       if (rName) socket.emit('joinRoleRoom', rName);
     });
 
-    socket.on('kitchen:new_order', (data: any) => {
+    const onNewKotOrder = (data: any) => {
       const rName = (user.role?.name || (user as any).role || '').toLowerCase();
-      if (rName === 'chef' || rName === 'admin') {
+      if (rName.includes('chef') || rName === 'admin' || userPerms.has('kitchen.view')) {
         playKitchenChime();
         triggerToast(
           'warning',
@@ -311,18 +311,15 @@ export default function App() {
       loadKitchen();
       loadServing();
       loadDashboard();
-    });
-
-    socket.on('order:created', () => {
-      loadServing();
-      loadKitchen();
-      loadDashboard();
       if (selectedFloorId) loadTables(selectedFloorId);
-    });
+    };
 
-    socket.on('order:item_ready', (item: any) => {
+    socket.on('kitchen:new_order', onNewKotOrder);
+    socket.on('order:created', onNewKotOrder);
+
+    const onDishReady = (item: any) => {
       const rName = (user.role?.name || (user as any).role || '').toLowerCase();
-      if (rName === 'waiter' || rName === 'staff' || rName === 'admin') {
+      if (rName.includes('waiter') || rName.includes('staff') || rName === 'admin' || userPerms.has('orders.update')) {
         playWaiterChime();
         triggerToast(
           'success',
@@ -332,19 +329,13 @@ export default function App() {
       }
       loadServing();
       if (selectedTable) loadActiveOrder(selectedTable.id);
-    });
+    };
+
+    socket.on('order:item_ready', onDishReady);
 
     socket.on('order:item_status_changed', (item: any) => {
       if (item.status === 'READY') {
-        const rName = (user.role?.name || (user as any).role || '').toLowerCase();
-        if (rName === 'waiter' || rName === 'staff' || rName === 'admin') {
-          playWaiterChime();
-          triggerToast(
-            'success',
-            '🛎️ DISH READY TO SERVE!',
-            `${item?.foodItem?.name || 'Dish'} is ready for Table!`,
-          );
-        }
+        onDishReady(item);
       }
       loadKitchen();
       loadServing();
@@ -1747,11 +1738,30 @@ export default function App() {
             />
           }
         >
-          <SectionHeader
-            title="Kitchen Display System"
-            subtitle="Real-time order tickets with live status update"
-            count={filteredKitchenTasks.length}
-          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <View style={{ flex: 1 }}>
+              <SectionHeader
+                title="Kitchen Display System"
+                subtitle="Real-time order tickets with live status update"
+                count={filteredKitchenTasks.length}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                playKitchenChime();
+                triggerToast('warning', '🔔 Kitchen Bell Tested', 'Audio chime & vibration active!');
+              }}
+              style={{
+                backgroundColor: '#d97706',
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: 10,
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ color: '#090d16', fontSize: 11, fontWeight: '900' }}>🔔 Test Bell</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={S.chipRow}>
             {[

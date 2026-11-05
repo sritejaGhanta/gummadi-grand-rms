@@ -40,6 +40,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   notifyNewOrder(order: any) {
     this.server.emit('order:created', order);
+    this.server.emit('kitchen:new_order', order);
     this.server.to('role:chef').emit('kitchen:new_order', order);
     this.server.to('role:manager').emit('manager:order_update', order);
     this.server.to('role:admin').emit('admin:order_update', order);
@@ -48,7 +49,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   notifyItemStatusUpdated(item: any) {
     this.server.emit('order:item_status_changed', item);
     if (item.status === 'READY') {
+      this.server.emit('order:item_ready', item);
       this.server.to('role:staff').emit('order:item_ready', item);
+      this.server.to('role:waiter').emit('order:item_ready', item);
     }
   }
 
@@ -61,6 +64,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   notifyBillRequested(data: any) {
+    this.server.emit('billing:requested', data);
     this.server.to('role:manager').emit('billing:requested', data);
     this.server.to('role:admin').emit('billing:requested', data);
   }
