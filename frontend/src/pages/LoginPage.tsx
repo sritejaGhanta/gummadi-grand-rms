@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { UtensilsCrossed, Lock, User, Sparkles, Shield, ChefHat, Smartphone, Receipt, Globe, Store } from 'lucide-react';
@@ -58,23 +58,20 @@ export const LoginPage: React.FC = () => {
 
       <div className="w-full max-w-md relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          {logoUrl && !imgError ? (
-            <div className="inline-flex w-16 h-16 rounded-2xl bg-slate-900 border border-slate-700/80 items-center justify-center p-2 shadow-2xl shadow-amber-500/20 mb-4">
-              <img
-                src={logoUrl}
-                alt={restaurantName}
-                className="w-full h-full object-contain"
-                onError={() => setImgError(true)}
-              />
-            </div>
-          ) : (
-            <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 items-center justify-center text-slate-950 font-bold shadow-2xl shadow-amber-500/30 mb-4 animate-pulse-glow">
+        <div className="text-center mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition mb-4 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800"
+          >
+            <span>← Back to AharPOS Website</span>
+          </Link>
+          <div className="block">
+            <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 items-center justify-center text-slate-950 font-bold shadow-2xl shadow-amber-500/30 mb-3 animate-pulse-glow">
               <UtensilsCrossed className="w-8 h-8" />
             </div>
-          )}
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">{restaurantName}</h2>
-          <p className="text-sm text-slate-400 mt-1">Enterprise Restaurant Management System</p>
+          </div>
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">AharPOS</h2>
+          <p className="text-xs text-slate-400 mt-1">Enterprise Multi-Tenant Restaurant Cloud & LAN System</p>
         </div>
 
         {/* Card */}
@@ -155,6 +152,46 @@ export const LoginPage: React.FC = () => {
                     </div>
                     <div className="text-[10px] text-slate-400">superadmin / superadmin123 (SaaS Multi-Tenant MRR)</div>
                   </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => quickLogin('gummadi_owner', 'gummadi123', '/owner-dashboard')}
+                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/40 text-xs font-medium text-emerald-200 transition text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Store className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      Gummadi Grand Owner <span className="text-[10px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded">SURESH</span>
+                    </div>
+                    <div className="text-[10px] text-slate-300">gummadi_owner / gummadi123 (Client Control Room)</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => quickLogin('gummadi_waiter', 'gummadi123', '/pos')}
+                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-emerald-500/30 text-xs font-medium text-slate-200 transition text-left"
+              >
+                <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="font-bold text-emerald-300">Gummadi Waiter</div>
+                  <div className="text-[10px] text-slate-400">gummadi_waiter (POS)</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => quickLogin('gummadi_chef', 'gummadi123', '/kitchen')}
+                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-emerald-500/30 text-xs font-medium text-slate-200 transition text-left"
+              >
+                <ChefHat className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="font-bold text-emerald-300">Gummadi Chef</div>
+                  <div className="text-[10px] text-slate-400">gummadi_chef (KDS)</div>
                 </div>
               </button>
 

@@ -26,6 +26,7 @@ import { DayClose } from './database/entities/day-close.entity';
 import { TenantRestaurant, TenantStatus } from './database/entities/tenant-restaurant.entity';
 import { SubscriptionPlan, PlanCode } from './database/entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionCycle, SubscriptionStatus } from './database/entities/tenant-subscription.entity';
+import { LandingLead } from './database/entities/landing-lead.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -59,13 +60,14 @@ const dataSource = new DataSource({
     TenantRestaurant,
     SubscriptionPlan,
     TenantSubscription,
+    LandingLead,
   ],
   synchronize: true,
 });
 
 async function seedSaaS() {
   await dataSource.initialize();
-  console.log('📦 Connected to PostgreSQL for SaaS Multi-Tenant Seeding...');
+  console.log('📦 Connected to PostgreSQL for AharPOS SaaS Multi-Tenant Seeding...');
 
   const planRepo = dataSource.getRepository(SubscriptionPlan);
   const tenantRepo = dataSource.getRepository(TenantRestaurant);
@@ -74,44 +76,42 @@ async function seedSaaS() {
   const userRepo = dataSource.getRepository(User);
   const permRepo = dataSource.getRepository(Permission);
   const rolePermRepo = dataSource.getRepository(RolePermission);
+  const floorRepo = dataSource.getRepository(Floor);
+  const tableRepo = dataSource.getRepository(RestaurantTable);
+  const catRepo = dataSource.getRepository(FoodCategory);
+  const foodRepo = dataSource.getRepository(FoodItem);
+  const settingRepo = dataSource.getRepository(ApplicationSetting);
+  const leadRepo = dataSource.getRepository(LandingLead);
 
-  // 1. Seed Subscription Plans
-  console.log('1. Seeding Subscription Plans...');
+  // 1. Seed Subscription Plans (including user's 10k/6mo and 20k/yr pricing)
+  console.log('1. Seeding Subscription Plans (10K for 6 Months, 20K for 1 Year)...');
   const plans = [
     {
-      name: 'Starter Plan',
-      code: PlanCode.STARTER,
-      priceMonthly: 999.0,
-      priceYearly: 9990.0,
+      name: 'Half-Yearly Plan (6 Months)',
+      code: PlanCode.HALF_YEARLY,
+      priceMonthly: 1666.67,
+      priceYearly: 10000.0,
       maxOutlets: 1,
-      maxStaff: 5,
-      maxTables: 15,
-      features: ['pos_billing', 'table_orders', 'thermal_receipts', 'basic_reports'],
-    },
-    {
-      name: 'Pro Plan',
-      code: PlanCode.PRO,
-      priceMonthly: 1999.0,
-      priceYearly: 19990.0,
-      maxOutlets: 2,
-      maxStaff: 15,
-      maxTables: 40,
+      maxStaff: 20,
+      maxTables: 50,
       features: [
         'pos_billing',
         'table_orders',
         'table_sharing',
         'kds_kitchen',
-        'thermal_receipts',
+        'inventory_management',
+        'recipe_auto_deduction',
+        'crm_loyalty_wallet',
+        'eod_day_close',
         'whatsapp_bill',
-        'staff_performance',
       ],
     },
     {
-      name: 'Enterprise Plan',
-      code: PlanCode.ENTERPRISE,
-      priceMonthly: 3499.0,
-      priceYearly: 34990.0,
-      maxOutlets: 10,
+      name: 'Annual Flagship Plan (1 Year)',
+      code: PlanCode.ANNUAL,
+      priceMonthly: 1666.67,
+      priceYearly: 20000.0,
+      maxOutlets: 2,
       maxStaff: 50,
       maxTables: 150,
       features: [
@@ -125,6 +125,7 @@ async function seedSaaS() {
         'eod_day_close',
         'whatsapp_bill',
         'multi_branch',
+        'priority_support',
       ],
     },
   ];
@@ -135,167 +136,244 @@ async function seedSaaS() {
     if (!plan) {
       plan = planRepo.create(p);
       await planRepo.save(plan);
+    } else {
+      plan.name = p.name;
+      plan.priceMonthly = p.priceMonthly;
+      plan.priceYearly = p.priceYearly;
+      await planRepo.save(plan);
     }
     planEntities[p.code] = plan;
   }
   console.log('✅ Subscription Plans verified.');
 
-  // 2. Seed Super Admin Role & User
-  console.log('2. Seeding Super Admin...');
-  let superAdminRole = await roleRepo.findOne({ where: { name: 'superadmin' } });
-  if (!superAdminRole) {
-    superAdminRole = roleRepo.create({
-      name: 'superadmin',
-      displayName: 'SaaS Super Administrator',
-      description: 'Master owner of SaaS platform with access to all tenants and subscriptions',
-      isSystem: true,
-    });
-    await roleRepo.save(superAdminRole);
-  }
+  // 2. Roles
+  const roles = await roleRepo.find();
+  const managerRole = roles.find(r => r.name === 'manager') || roles.find(r => r.name === 'admin');
+  const chefRole = roles.find(r => r.name === 'chef');
+  const waiterRole = roles.find(r => r.name === 'staff');
 
-  // Map all permissions to super admin
-  const allPerms = await permRepo.find();
-  for (const perm of allPerms) {
-    const exists = await rolePermRepo.findOne({
-      where: { roleId: superAdminRole.id, permissionId: perm.id },
-    });
-    if (!exists) {
-      await rolePermRepo.save(rolePermRepo.create({ roleId: superAdminRole.id, permissionId: perm.id }));
-    }
-  }
+  // 3. Seed Tenant: Gummadi Grand Restaurant
+  console.log('2. Seeding Tenant: Gummadi Grand Restaurant...');
+  let gummadi = await tenantRepo.findOne({ where: { slug: 'gummadi-grand' } });
+  const trialEnd = new Date();
+  trialEnd.setDate(trialEnd.getDate() + 30); // 1-Month (30 Days) Trial
 
-  const superAdminPasswordHash = await bcrypt.hash('superadmin123', 10);
-  let superAdminUser = await userRepo.findOne({ where: { username: 'superadmin' } });
-  if (!superAdminUser) {
-    superAdminUser = userRepo.create({
-      username: 'superadmin',
-      name: 'Platform Sovereign SuperAdmin',
-      email: 'superadmin@saasplatform.com',
-      passwordHash: superAdminPasswordHash,
-      roleId: superAdminRole.id,
-      restaurantId: null, // Global platform level
-      isActive: true,
-    });
-    await userRepo.save(superAdminUser);
-    console.log('✅ Super Admin user created: superadmin / superadmin123');
-  } else {
-    superAdminUser.roleId = superAdminRole.id;
-    await userRepo.save(superAdminUser);
-  }
-
-  // 3. Seed Default Primary Tenant: Royal Feast Grand Palace
-  console.log('3. Seeding Default Tenant: Royal Feast Grand Palace...');
-  let defaultTenant = await tenantRepo.findOne({ where: { slug: 'royal-feast' } });
-  if (!defaultTenant) {
-    const subEnd = new Date();
-    subEnd.setFullYear(subEnd.getFullYear() + 1);
-
-    defaultTenant = tenantRepo.create({
-      name: 'Royal Feast Grand Palace',
-      slug: 'royal-feast',
-      cuisine: 'Hyderabadi & Mughlai',
+  if (!gummadi) {
+    gummadi = tenantRepo.create({
+      name: 'Gummadi Grand Restaurant',
+      slug: 'gummadi-grand',
+      cuisine: 'Andhra & Rayalaseema Grand Dining',
       brandLogo: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=120&auto=format&fit=crop',
-      address: 'Road No. 36, Jubilee Hills',
+      address: 'Plot 42, KPHB Colony, Kukatpally',
       city: 'Hyderabad',
       state: 'Telangana',
-      contactEmail: 'contact@royalfeast.com',
-      contactPhone: '+91 98765 43210',
-      gstNumber: '36AABCU9603R1ZM',
-      fssaiNumber: '13621014000452',
+      contactEmail: 'gummadi.grand@gmail.com',
+      contactPhone: '+91 99480 12345',
+      gstNumber: '36AAACG1234G1Z9',
+      fssaiNumber: '13623015000777',
       status: TenantStatus.ACTIVE,
-      planId: planEntities[PlanCode.ENTERPRISE]?.id,
-      subscriptionEndsAt: subEnd,
+      planId: planEntities[PlanCode.ANNUAL]?.id || planEntities[PlanCode.HALF_YEARLY]?.id,
+      trialEndsAt: trialEnd,
+      subscriptionEndsAt: trialEnd,
     });
-    await tenantRepo.save(defaultTenant);
+    await tenantRepo.save(gummadi);
 
-    // Initial subscription record
+    // Initial subscription
     await subRepo.save(
       subRepo.create({
-        restaurantId: defaultTenant.id,
-        planId: planEntities[PlanCode.ENTERPRISE].id,
+        restaurantId: gummadi.id,
+        planId: planEntities[PlanCode.ANNUAL]?.id || planEntities[PlanCode.HALF_YEARLY]?.id,
         billingCycle: SubscriptionCycle.YEARLY,
         status: SubscriptionStatus.ACTIVE,
         startDate: new Date(),
-        endDate: subEnd,
-        amountPaid: 34990.0,
-        paymentMethod: 'ONLINE_UPI',
-        invoiceNumber: 'INV-202611-0001',
-        notes: 'Annual Enterprise Plan Renewal',
-      }),
-    );
-  }
-
-  // Tag all existing single-tenant records to defaultTenant.id
-  console.log('4. Scoping existing records to Royal Feast Grand Palace...');
-  await dataSource.query(`UPDATE users SET "restaurantId" = $1 WHERE "restaurantId" IS NULL AND username != 'superadmin'`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE floors SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE tables SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE food_categories SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE food_items SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE orders SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE bills SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE inventory_items SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE customers SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-  await dataSource.query(`UPDATE day_closes SET "restaurantId" = $1 WHERE "restaurantId" IS NULL`, [defaultTenant.id]);
-
-  // 5. Seed 2nd Tenant: Mandi King Arabian Restaurant
-  console.log('5. Seeding 2nd Tenant: Mandi King Arabian Restaurant...');
-  let mandiKing = await tenantRepo.findOne({ where: { slug: 'mandi-king' } });
-  if (!mandiKing) {
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 14);
-
-    mandiKing = tenantRepo.create({
-      name: 'Mandi King Arabian Restaurant',
-      slug: 'mandi-king',
-      cuisine: 'Arabian Mandi & Grills',
-      brandLogo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=120&auto=format&fit=crop',
-      address: 'KPHB Phase 1, JNTU Road, Kukatpally',
-      city: 'Hyderabad',
-      state: 'Telangana',
-      contactEmail: 'mandiking.hyd@gmail.com',
-      contactPhone: '+91 81429 99802',
-      gstNumber: '36BBCDE1234F1Z5',
-      fssaiNumber: '13622015000889',
-      status: TenantStatus.TRIAL,
-      planId: planEntities[PlanCode.PRO]?.id,
-      trialEndsAt: trialEnd,
-    });
-    await tenantRepo.save(mandiKing);
-
-    // Create Owner for Mandi King
-    const ownerRole = await roleRepo.findOne({ where: { name: 'manager' } });
-    const mandiOwnerPass = await bcrypt.hash('mandiking123', 10);
-    const mandiOwner = userRepo.create({
-      username: 'mandiking_owner',
-      name: 'Aslam Khan (Owner)',
-      email: 'mandiking.hyd@gmail.com',
-      phone: '+91 81429 99802',
-      passwordHash: mandiOwnerPass,
-      roleId: ownerRole?.id,
-      restaurantId: mandiKing.id,
-      isActive: true,
-    });
-    await userRepo.save(mandiOwner);
-
-    // Initial trial sub
-    await subRepo.save(
-      subRepo.create({
-        restaurantId: mandiKing.id,
-        planId: planEntities[PlanCode.PRO].id,
-        billingCycle: SubscriptionCycle.MONTHLY,
-        status: SubscriptionStatus.TRIAL,
-        startDate: new Date(),
         endDate: trialEnd,
-        amountPaid: 0,
-        paymentMethod: 'TRIAL',
-        invoiceNumber: 'INV-202611-0002',
-        notes: '14-Day Free SaaS Trial',
+        amountPaid: 20000.0,
+        paymentMethod: 'ONLINE_UPI',
+        invoiceNumber: 'INV-GUMMADI-001',
+        notes: 'Annual Flagship Plan - Gummadi Grand Outlets',
       }),
     );
   }
 
-  console.log('🎉 SaaS Multi-Tenant Seeding Complete!');
+  // 4. Seed Gummadi Grand Staff (Owner, Manager, Chef, Waiter)
+  console.log('3. Seeding Gummadi Grand Staff & Roles...');
+  const gummadiPass = await bcrypt.hash('gummadi123', 10);
+
+  const staffUsers = [
+    {
+      username: 'gummadi_owner',
+      name: 'Suresh Gummadi (Owner)',
+      email: 'suresh@gummadigrand.com',
+      roleId: managerRole?.id,
+      phone: '+91 99480 12345',
+    },
+    {
+      username: 'gummadi_mgr',
+      name: 'Kiran (Store Manager)',
+      email: 'kiran.mgr@gummadigrand.com',
+      roleId: managerRole?.id,
+      phone: '+91 99480 12346',
+    },
+    {
+      username: 'gummadi_chef',
+      name: 'Chef Subbarao (Head Chef)',
+      email: 'chef@gummadigrand.com',
+      roleId: chefRole?.id,
+      phone: '+91 99480 12347',
+    },
+    {
+      username: 'gummadi_waiter',
+      name: 'Ramu (Floor Captain)',
+      email: 'ramu@gummadigrand.com',
+      roleId: waiterRole?.id,
+      phone: '+91 99480 12348',
+    },
+  ];
+
+  for (const s of staffUsers) {
+    let u = await userRepo.findOne({ where: { username: s.username } });
+    if (!u) {
+      u = userRepo.create({
+        username: s.username,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        passwordHash: gummadiPass,
+        roleId: s.roleId!,
+        restaurantId: gummadi.id,
+        isActive: true,
+      });
+      await userRepo.save(u);
+    }
+  }
+
+  // 5. Seed Gummadi Grand Floor & Tables
+  let gummadiFloor = await floorRepo.findOne({ where: { restaurantId: gummadi.id } });
+  if (!gummadiFloor) {
+    gummadiFloor = floorRepo.create({
+      name: 'Gummadi Main AC Dining',
+      floorNumber: 1,
+      restaurantId: gummadi.id,
+    });
+    await floorRepo.save(gummadiFloor);
+
+    const tables = [
+      { tableNumber: 'G-01', seatingCapacity: 4 },
+      { tableNumber: 'G-02', seatingCapacity: 6 },
+      { tableNumber: 'G-03', seatingCapacity: 2 },
+      { tableNumber: 'G-04', seatingCapacity: 8 },
+    ];
+    for (const t of tables) {
+      await tableRepo.save(
+        tableRepo.create({
+          tableNumber: t.tableNumber,
+          seatingCapacity: t.seatingCapacity,
+          status: 'AVAILABLE' as any,
+          floorId: gummadiFloor.id,
+          restaurantId: gummadi.id,
+        }),
+      );
+    }
+  }
+
+  // 6. Seed Gummadi Grand Menu Items
+  let gummadiCat = await catRepo.findOne({ where: { restaurantId: gummadi.id } });
+  if (!gummadiCat) {
+    gummadiCat = catRepo.create({
+      name: 'Gummadi Grand Specials',
+      description: 'Authentic Andhra & Rayalaseema Delicacies',
+      restaurantId: gummadi.id,
+    });
+    await catRepo.save(gummadiCat);
+
+    const items = [
+      { name: 'Gummadi Special Royyala Biryani', price: 380, isVeg: false, isActive: true },
+      { name: 'Natukodi Pulusu & Ragi Sankati', price: 320, isVeg: false, isActive: true },
+      { name: 'Gongura Mutton Roast', price: 360, isVeg: false, isActive: true },
+      { name: 'Andhra Royal Bhojanam', price: 220, isVeg: true, isActive: true },
+      { name: 'Apricot Delight Dessert', price: 150, isVeg: true, isActive: true },
+    ];
+    for (const item of items) {
+      await foodRepo.save(
+        foodRepo.create({
+          name: item.name,
+          price: item.price,
+          isVeg: item.isVeg,
+          isActive: item.isActive,
+          categoryId: gummadiCat.id,
+          restaurantId: gummadi.id,
+        }),
+      );
+    }
+  }
+
+  // 7. Seed Default Landing CMS Settings
+  console.log('4. Seeding Default Landing CMS Settings for AharPOS...');
+  const cmsDefaults: Record<string, string> = {
+    landing_brand_name: 'AharPOS',
+    landing_tagline: 'Smart Dining. High-Yield Operations.',
+    landing_hero_title: 'AharPOS — The Operating System for Fast-Growing Restaurants',
+    landing_hero_subtitle: 'All-in-One Cloud & Local POS, Multi-Guest Table Sharing, Zero-Latency Kitchen KDS, Recipe Yield Inventory & WhatsApp E-Bills built for Indian Food Businesses.',
+    landing_trial_days: '30', // 1 Month trial controllable by Super Admin
+    landing_price_6_months: '10000',
+    landing_price_1_year: '20000',
+    landing_banner_text: '🔥 Special Launch Offer: 1-Month Free Unlimited Trial for Restaurants!',
+    landing_banner_active: 'true',
+    landing_contact_phone: '+91 98765 43210',
+    landing_contact_whatsapp: '+91 98765 43210',
+    landing_contact_email: 'sales@aharpos.in',
+    landing_contact_address: 'HITEC City, Madhapur, Hyderabad, Telangana 500081',
+    landing_theme_primary: '#f59e0b',
+  };
+
+  for (const [key, val] of Object.entries(cmsDefaults)) {
+    let setting = await settingRepo.findOne({ where: { key } });
+    if (!setting) {
+      setting = settingRepo.create({
+        key,
+        value: val,
+        category: 'landing',
+        description: `Landing CMS setting for ${key}`,
+      });
+      await settingRepo.save(setting);
+    }
+  }
+
+  // 8. Seed sample demo inquiries / leads
+  console.log('5. Seeding Sample Demo Leads for Super Admin...');
+  const leads = [
+    {
+      restaurantName: 'Platform 65 Train Restaurant',
+      ownerName: 'Venkatesh Rao',
+      phone: '+91 88018 30831',
+      email: 'venkat@platform65.in',
+      city: 'Dilsukhnagar, Hyderabad',
+      seatingCapacity: '120 Seats',
+      preferredPlan: '1_YEAR',
+      notes: 'Interested in Table Sharing & Sound Alert Kitchen KDS. Looking to deploy across 2 outlets.',
+      status: 'DEMO_SCHEDULED',
+    },
+    {
+      restaurantName: 'Flechazo Mediterranean Buffet',
+      ownerName: 'Sunil Verma',
+      phone: '+91 80088 83032',
+      email: 'sunil@flechazo.in',
+      city: 'Madhapur, Hyderabad',
+      seatingCapacity: '200 Seats',
+      preferredPlan: '1_YEAR',
+      notes: 'Wants automated recipe wastage tracking and live table turnover reports.',
+      status: 'NEW',
+    },
+  ];
+
+  for (const l of leads) {
+    const existing = await leadRepo.findOne({ where: { phone: l.phone } });
+    if (!existing) {
+      await leadRepo.save(leadRepo.create(l));
+    }
+  }
+
+  console.log('🎉 AharPOS Seed Complete! Gummadi Grand, Pricing (10K/20K), CMS & Leads ready.');
   await dataSource.destroy();
 }
 

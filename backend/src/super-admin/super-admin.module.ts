@@ -9,6 +9,8 @@ import { User } from '../database/entities/user.entity';
 import { Role } from '../database/entities/role.entity';
 import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
+import { ApplicationSetting } from '../database/entities/application-setting.entity';
+import { LandingLead } from '../database/entities/landing-lead.entity';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { Bill } from '../database/entities/bill.entity';
       Role,
       Order,
       Bill,
+      ApplicationSetting,
+      LandingLead,
     ]),
   ],
   controllers: [SuperAdminController],

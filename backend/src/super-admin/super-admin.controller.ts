@@ -100,4 +100,58 @@ export class SuperAdminController {
   ) {
     return this.service.createRestaurantStaff(id, body);
   }
+
+  // ==========================================
+  // LANDING CMS & LEADS
+  // ==========================================
+  @Get('landing-cms')
+  @ApiOperation({ summary: 'Get dynamic landing page CMS settings' })
+  async getLandingCms() {
+    return this.service.getLandingCmsSettings();
+  }
+
+  @Patch('landing-cms')
+  @ApiOperation({ summary: 'Update dynamic landing page CMS settings' })
+  async updateLandingCms(@Body() body: any) {
+    return this.service.updateLandingCmsSettings(body);
+  }
+
+  @Post('demo-inquiry')
+  @ApiOperation({ summary: 'Public demo inquiry form submitted by restaurant owners' })
+  async submitDemoInquiry(
+    @Body()
+    body: {
+      restaurantName: string;
+      ownerName: string;
+      phone: string;
+      email?: string;
+      city?: string;
+      seatingCapacity?: string;
+      preferredPlan?: string;
+      notes?: string;
+    },
+  ) {
+    return this.service.createDemoLead(body);
+  }
+
+  @Get('leads')
+  @ApiOperation({ summary: 'Get all demo inquiries / leads' })
+  async getLeads() {
+    return this.service.getAllLeads();
+  }
+
+  @Patch('leads/:id/status')
+  @ApiOperation({ summary: 'Update lead status' })
+  async updateLeadStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string; notes?: string },
+  ) {
+    return this.service.updateLeadStatus(id, body.status, body.notes);
+  }
+
+  @Post('leads/:id/convert')
+  @ApiOperation({ summary: '1-Click convert demo lead to active tenant' })
+  async convertLead(@Param('id') id: string) {
+    return this.service.convertLeadToTenant(id);
+  }
 }

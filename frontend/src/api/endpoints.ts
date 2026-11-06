@@ -153,4 +153,11 @@ export const superAdminApi = {
   recordSubscription: (data: any) => apiClient.post('/super-admin/subscriptions/record', data),
   getStaff: (restaurantId: string) => apiClient.get(`/super-admin/restaurants/${restaurantId}/staff`),
   addStaff: (restaurantId: string, data: any) => apiClient.post(`/super-admin/restaurants/${restaurantId}/staff`, data),
+  // Landing CMS & Leads
+  getLandingCms: () => apiClient.get('/super-admin/landing-cms'),
+  updateLandingCms: (data: any) => apiClient.patch('/super-admin/landing-cms', data),
+  getLeads: () => apiClient.get('/super-admin/leads'),
+  updateLeadStatus: (id: string, data: { status: string; notes?: string }) => apiClient.patch(`/super-admin/leads/${id}/status`, data),
+  convertLead: (id: string) => apiClient.post(`/super-admin/leads/${id}/convert`),
+  submitDemoInquiry: (data: any) => apiClient.post('/super-admin/demo-inquiry', data),
 };

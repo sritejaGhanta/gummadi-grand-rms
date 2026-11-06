@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 
 export enum PlanCode {
+  HALF_YEARLY = 'HALF_YEARLY',
+  ANNUAL = 'ANNUAL',
   STARTER = 'STARTER',
   PRO = 'PRO',
   ENTERPRISE = 'ENTERPRISE',

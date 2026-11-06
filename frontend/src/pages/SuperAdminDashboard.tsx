@@ -22,6 +22,12 @@ import {
   Mail,
   MapPin,
   X,
+  Globe,
+  PhoneCall,
+  Save,
+  MessageSquare,
+  Clock,
+  ArrowUpRight,
 } from 'lucide-react';
 
 export const SuperAdminDashboard: React.FC = () => {
@@ -47,11 +53,32 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'plans'>('restaurants');
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Landing CMS & Leads State
+  const [leads, setLeads] = useState<any[]>([]);
+  const [landingCmsForm, setLandingCmsForm] = useState<any>({
+    brandName: 'AharPOS',
+    tagline: 'Smart Dining. High-Yield Operations.',
+    heroTitle: 'AharPOS — The Operating System for Fast-Growing Restaurants',
+    heroSubtitle:
+      'All-in-One Cloud & Local POS, Multi-Guest Table Sharing, Zero-Latency Kitchen KDS, Recipe Yield Inventory & WhatsApp E-Bills built for Indian Food Businesses.',
+    trialDays: 30,
+    plan6MonthsPrice: 10000,
+    plan1YearPrice: 20000,
+    bannerText: '🔥 Special Launch Offer: 1-Month Free Unlimited Trial for Restaurants!',
+    bannerActive: true,
+    contactPhone: '+91 98765 43210',
+    contactEmail: 'sales@aharpos.in',
+    contactWhatsapp: '+91 98765 43210',
+    contactAddress: 'HITEC City, Madhapur, Hyderabad, Telangana 500081',
+    themePrimary: '#f59e0b',
+  });
+  const [savingCms, setSavingCms] = useState(false);
 
   // Onboarding Modal
   const [showOnboardModal, setShowOnboardModal] = useState(false);
@@ -62,7 +89,7 @@ export const SuperAdminDashboard: React.FC = () => {
     contactPhone: '',
     city: 'Hyderabad',
     address: '',
-    planCode: 'PRO',
+    planCode: 'ANNUAL',
     ownerName: '',
     ownerUsername: '',
     ownerPassword: '',
@@ -73,8 +100,8 @@ export const SuperAdminDashboard: React.FC = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
   const [subForm, setSubForm] = useState({
     planId: '',
-    billingCycle: 'MONTHLY',
-    amountPaid: 1999,
+    billingCycle: 'YEARLY',
+    amountPaid: 20000,
     paymentMethod: 'UPI',
     transactionReference: '',
     notes: '',
@@ -95,18 +122,62 @@ export const SuperAdminDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [mRes, rRes, pRes] = await Promise.all([
+      const [mRes, rRes, pRes, cmsRes, leadsRes] = await Promise.all([
         superAdminApi.getMetrics(),
         superAdminApi.getRestaurants(),
         superAdminApi.getPlans(),
+        superAdminApi.getLandingCms().catch(() => null),
+        superAdminApi.getLeads().catch(() => []),
       ]);
       setMetrics(mRes || {});
       setRestaurants(Array.isArray(rRes) ? rRes : []);
       setPlans(Array.isArray(pRes) ? pRes : []);
+      if (cmsRes) setLandingCmsForm(cmsRes);
+      setLeads(Array.isArray(leadsRes) ? leadsRes : []);
     } catch (e: any) {
       setActionError(e.message || 'Failed to load Super Admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveCms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingCms(true);
+    setActionError(null);
+    try {
+      const updated = await superAdminApi.updateLandingCms(landingCmsForm);
+      setLandingCmsForm(updated);
+      setActionSuccess('Landing Page Settings & Pricing saved successfully! Public website updated.');
+      setTimeout(() => setActionSuccess(null), 4000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to save landing settings');
+    } finally {
+      setSavingCms(false);
+    }
+  };
+
+  const handleUpdateLeadStatus = async (leadId: string, status: string) => {
+    try {
+      await superAdminApi.updateLeadStatus(leadId, { status });
+      setActionSuccess(`Lead status updated to ${status}`);
+      loadData();
+      setTimeout(() => setActionSuccess(null), 3000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to update lead status');
+    }
+  };
+
+  const handleConvertLead = async (leadId: string) => {
+    try {
+      const res = await superAdminApi.convertLead(leadId);
+      setActionSuccess(
+        `Lead successfully converted! Restaurant "${res.restaurant?.name}" onboarded. Owner username: ${res.owner?.username}`,
+      );
+      loadData();
+      setTimeout(() => setActionSuccess(null), 6000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to convert lead');
     }
   };
 
@@ -336,7 +407,7 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
         <button
           onClick={() => setActiveTab('restaurants')}
           className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
@@ -358,6 +429,31 @@ export const SuperAdminDashboard: React.FC = () => {
         >
           <CreditCard className="w-4 h-4" />
           <span>Subscription Plans & Tiers ({plans.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('landing_cms')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'landing_cms'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>Landing Website CMS & Pricing</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('leads')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 relative ${
+            activeTab === 'leads'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <PhoneCall className="w-4 h-4" />
+          <span>Demo Inquiries & Leads ({leads.length})</span>
+          {leads.filter((l) => l.status === 'NEW').length > 0 && (
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          )}
         </button>
       </div>
 
@@ -570,6 +666,397 @@ export const SuperAdminDashboard: React.FC = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* TAB 3: LANDING WEBSITE CMS & PRICING CONTROL */}
+      {activeTab === 'landing_cms' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Globe className="w-5 h-5 text-amber-500" />
+                <span>Public Landing Page CMS & Pricing Control</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Update marketing headlines, trial duration, subscription prices (10K / 20K), announcement banners, and sales contacts. All changes reflect live instantly on the public website.
+              </p>
+            </div>
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center gap-1.5 shrink-0"
+            >
+              <span>View Public Landing Site</span>
+              <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+            </a>
+          </div>
+
+          <form onSubmit={handleSaveCms} className="space-y-6">
+            {/* Box 1: Core SaaS Pricing & Free Trial Days */}
+            <div className="glass-panel p-6 rounded-2xl border border-amber-500/30 bg-slate-900/60 space-y-4 shadow-xl">
+              <div className="flex items-center gap-2 text-sm font-black text-amber-400">
+                <Sparkles className="w-4 h-4" />
+                <span>Flagship Pricing & Trial Days Control (Super Admin Exclusive)</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">
+                    Free Trial Duration (Days) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    required
+                    value={landingCmsForm.trialDays}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, trialDays: parseInt(e.target.value, 10) || 30 })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500 text-sm"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">Default: 30 Days (1 Month)</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">
+                    Half-Yearly Plan (6 Months) Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    step="100"
+                    required
+                    value={landingCmsForm.plan6MonthsPrice}
+                    onChange={(e) =>
+                      setLandingCmsForm({
+                        ...landingCmsForm,
+                        plan6MonthsPrice: parseFloat(e.target.value) || 10000,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500 text-sm"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">Current: ₹10,000 for 6 Months</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">
+                    Annual Flagship Plan (1 Year) Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    step="100"
+                    required
+                    value={landingCmsForm.plan1YearPrice}
+                    onChange={(e) =>
+                      setLandingCmsForm({
+                        ...landingCmsForm,
+                        plan1YearPrice: parseFloat(e.target.value) || 20000,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500 text-sm"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">Current: ₹20,000 for 1 Year</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Box 2: Promotional Top Banner */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <MessageSquare className="w-4 h-4 text-amber-500" />
+                  <span>Top Launch Announcement Banner</span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={landingCmsForm.bannerActive}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, bannerActive: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
+                  />
+                  <span>Show Banner on Public Site</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1 text-xs">Announcement Text</label>
+                <input
+                  type="text"
+                  value={landingCmsForm.bannerText}
+                  onChange={(e) =>
+                    setLandingCmsForm({ ...landingCmsForm, bannerText: e.target.value })
+                  }
+                  placeholder="e.g. 🔥 Special Launch Offer: 1-Month Free Unlimited Trial for Restaurants!"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            {/* Box 3: Brand Identity & Hero Headlines */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-4">
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <span>Brand Name & Hero Section Content</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Brand Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={landingCmsForm.brandName}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, brandName: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Brand Tagline</label>
+                  <input
+                    type="text"
+                    value={landingCmsForm.tagline}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, tagline: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Hero Section Main Heading</label>
+                  <input
+                    type="text"
+                    value={landingCmsForm.heroTitle}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, heroTitle: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Hero Subtitle / Description</label>
+                  <textarea
+                    rows={2}
+                    value={landingCmsForm.heroSubtitle}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, heroSubtitle: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Box 4: Sales Contacts (Phone, WhatsApp, Email, Office) */}
+            <div className="glass-panel p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-4">
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                <PhoneCall className="w-4 h-4 text-amber-500" />
+                <span>Sales & Enterprise Support Contact Details</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Direct Sales Phone</label>
+                  <input
+                    type="text"
+                    value={landingCmsForm.contactPhone}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, contactPhone: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">WhatsApp Support Number</label>
+                  <input
+                    type="text"
+                    value={landingCmsForm.contactWhatsapp}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, contactWhatsapp: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Official Sales Email</label>
+                  <input
+                    type="email"
+                    value={landingCmsForm.contactEmail}
+                    onChange={(e) =>
+                      setLandingCmsForm({ ...landingCmsForm, contactEmail: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="text-xs">
+                <label className="block text-slate-400 font-bold mb-1">Office / Headquarters Address</label>
+                <input
+                  type="text"
+                  value={landingCmsForm.contactAddress}
+                  onChange={(e) =>
+                    setLandingCmsForm({ ...landingCmsForm, contactAddress: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={savingCms}
+                className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{savingCms ? 'Saving Settings...' : 'Save & Publish Live to Website'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 4: DEMO INQUIRIES & LEADS MANAGEMENT */}
+      {activeTab === 'leads' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <PhoneCall className="w-5 h-5 text-amber-500" />
+                <span>Restaurant Demo Inquiries & Inbound Leads ({leads.length})</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Every restaurant owner who requests a free trial or live demo on the public landing page appears here. Call them, schedule a demo, and onboard them with 1-click!
+              </p>
+            </div>
+            <button
+              onClick={() => loadData()}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center gap-1.5 shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Refresh Leads</span>
+            </button>
+          </div>
+
+          {leads.length === 0 ? (
+            <div className="glass-panel p-12 rounded-3xl border border-slate-800 text-center space-y-3">
+              <PhoneCall className="w-12 h-12 text-slate-600 mx-auto" />
+              <div className="text-base font-bold text-white">No Demo Inquiries Yet</div>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                When restaurant owners fill the form on the landing page, their contact details and seating requirements will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="glass-panel rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-950/80 uppercase text-[10px] tracking-wider text-slate-400 border-b border-slate-800 font-bold">
+                    <tr>
+                      <th className="py-3 px-4">Restaurant & Owner</th>
+                      <th className="py-3 px-4">Contact Phone</th>
+                      <th className="py-3 px-4">Location & Size</th>
+                      <th className="py-3 px-4">Preferred Plan</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {leads.map((l: any) => (
+                      <tr key={l.id} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-white text-sm">{l.restaurantName}</div>
+                          <div className="text-xs text-amber-400 font-medium">{l.ownerName}</div>
+                          {l.notes && (
+                            <div className="text-[11px] text-slate-400 italic mt-0.5 line-clamp-1">
+                              "{l.notes}"
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-mono">
+                          <a
+                            href={`tel:${l.phone}`}
+                            className="font-bold text-slate-200 hover:text-amber-400 flex items-center gap-1.5 transition"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>{l.phone}</span>
+                          </a>
+                          {l.email && <div className="text-[10px] text-slate-500 mt-0.5">{l.email}</div>}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium text-slate-200 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-rose-400" />
+                            <span>{l.city || 'Hyderabad'}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400">{l.seatingCapacity || 'Standard'}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                              l.preferredPlan === '1_YEAR'
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            {l.preferredPlan === '1_YEAR' ? 'Annual (₹20,000)' : 'Half-Yearly (₹10,000)'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={l.status}
+                            onChange={(e) => handleUpdateLeadStatus(l.id, e.target.value)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${
+                              l.status === 'CONVERTED'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                : l.status === 'DEMO_SCHEDULED'
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                                : l.status === 'CONTACTED'
+                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                                : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                            }`}
+                          >
+                            <option value="NEW">NEW LEAD</option>
+                            <option value="CONTACTED">CONTACTED</option>
+                            <option value="DEMO_SCHEDULED">DEMO SCHEDULED</option>
+                            <option value="CONVERTED">CONVERTED (CLIENT)</option>
+                            <option value="REJECTED">REJECTED</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {l.status !== 'CONVERTED' ? (
+                            <button
+                              onClick={() => handleConvertLead(l.id)}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/20 transition flex items-center gap-1 ml-auto"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>1-Click Onboard Tenant</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] font-bold text-emerald-400 flex items-center justify-end gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Active Tenant</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

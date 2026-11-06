@@ -9,6 +9,8 @@ import { User } from '../database/entities/user.entity';
 import { Role } from '../database/entities/role.entity';
 import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
+import { ApplicationSetting } from '../database/entities/application-setting.entity';
+import { LandingLead } from '../database/entities/landing-lead.entity';
 
 @Injectable()
 export class SuperAdminService {
@@ -27,6 +29,10 @@ export class SuperAdminService {
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(Bill)
     private readonly billRepo: Repository<Bill>,
+    @InjectRepository(ApplicationSetting)
+    private readonly settingRepo: Repository<ApplicationSetting>,
+    @InjectRepository(LandingLead)
+    private readonly leadRepo: Repository<LandingLead>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -299,5 +305,217 @@ export class SuperAdminService {
       isActive: true,
     });
     return this.userRepo.save(user);
+  }
+
+  // ==========================================
+  // LANDING PAGE CMS & SETTINGS CONTROLLER (Super Admin)
+  // ==========================================
+  async getLandingCmsSettings() {
+    const rawSettings = await this.settingRepo.find({
+      where: { category: 'landing' },
+    });
+
+    const settingsMap: Record<string, string> = {};
+    for (const s of rawSettings) {
+      settingsMap[s.key] = s.value;
+    }
+
+    const defaultTestimonials = [
+      {
+        restaurantName: 'Gummadi Grand Restaurant',
+        ownerName: 'Suresh Gummadi (Founder)',
+        location: 'Kukatpally, Hyderabad',
+        quote: 'AharPOS changed our rush-hour table turnover completely. Table sharing and instant KOT to kitchen saved us 20 minutes per table!',
+        rating: 5,
+        growthMetric: '+35% Faster Table Turnover',
+      },
+      {
+        restaurantName: 'Mandi King Arabian Restaurant',
+        ownerName: 'Mohammed R. (Owner)',
+        location: 'JNTU Road, Hyderabad',
+        quote: 'Our chefs love the KDS screen. No missed orders or handwritten paper slips. Daily closing Z-report on WhatsApp is a blessing.',
+        rating: 5,
+        growthMetric: '0 Lost KOTs',
+      },
+      {
+        restaurantName: 'Teluguness Restaurant',
+        ownerName: 'Chaitanya K. (Managing Partner)',
+        location: 'Madhapur, Hi-Tech City',
+        quote: 'Petpooja was charging high commissions and hidden fees. AharPOS flat pricing and offline LAN mode is 10x better.',
+        rating: 5,
+        growthMetric: '₹1.2L Saved in Annual Fees',
+      },
+    ];
+
+    let testimonials = defaultTestimonials;
+    if (settingsMap['landing_testimonials']) {
+      try {
+        testimonials = JSON.parse(settingsMap['landing_testimonials']);
+      } catch (e) {
+        testimonials = defaultTestimonials;
+      }
+    }
+
+    return {
+      brandName: settingsMap['landing_brand_name'] || 'AharPOS',
+      tagline: settingsMap['landing_tagline'] || 'Smart Dining. High-Yield Operations.',
+      heroTitle:
+        settingsMap['landing_hero_title'] ||
+        'AharPOS — The Operating System for Fast-Growing Restaurants',
+      heroSubtitle:
+        settingsMap['landing_hero_subtitle'] ||
+        'Next-gen Cloud & Local POS, Multi-Guest Table Sharing, Zero-Latency Kitchen KDS, Recipe Yield Inventory & WhatsApp E-Bills built for Indian Food Businesses.',
+      trialDays: parseInt(settingsMap['landing_trial_days'] || '30', 10),
+      plan6MonthsPrice: parseFloat(settingsMap['landing_price_6_months'] || '10000'),
+      plan1YearPrice: parseFloat(settingsMap['landing_price_1_year'] || '20000'),
+      bannerText:
+        settingsMap['landing_banner_text'] ||
+        '🔥 Special Launch Offer: 1-Month Free Unlimited Trial for Restaurants!',
+      bannerActive: settingsMap['landing_banner_active'] !== 'false',
+      contactPhone: settingsMap['landing_contact_phone'] || '+91 98765 43210',
+      contactEmail: settingsMap['landing_contact_email'] || 'sales@aharpos.in',
+      contactWhatsapp: settingsMap['landing_contact_whatsapp'] || '+91 98765 43210',
+      contactAddress:
+        settingsMap['landing_contact_address'] ||
+        'HITEC City, Madhapur, Hyderabad, Telangana 500081',
+      themePrimary: settingsMap['landing_theme_primary'] || '#f59e0b',
+      testimonials,
+    };
+  }
+
+  async updateLandingCmsSettings(dto: Partial<{
+    brandName: string;
+    tagline: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    trialDays: number;
+    plan6MonthsPrice: number;
+    plan1YearPrice: number;
+    bannerText: string;
+    bannerActive: boolean;
+    contactPhone: string;
+    contactEmail: string;
+    contactWhatsapp: string;
+    contactAddress: string;
+    themePrimary: string;
+    testimonials: any[];
+  }>) {
+    const keyMap: Record<string, any> = {
+      landing_brand_name: dto.brandName,
+      landing_tagline: dto.tagline,
+      landing_hero_title: dto.heroTitle,
+      landing_hero_subtitle: dto.heroSubtitle,
+      landing_trial_days: dto.trialDays !== undefined ? String(dto.trialDays) : undefined,
+      landing_price_6_months: dto.plan6MonthsPrice !== undefined ? String(dto.plan6MonthsPrice) : undefined,
+      landing_price_1_year: dto.plan1YearPrice !== undefined ? String(dto.plan1YearPrice) : undefined,
+      landing_banner_text: dto.bannerText,
+      landing_banner_active: dto.bannerActive !== undefined ? String(dto.bannerActive) : undefined,
+      landing_contact_phone: dto.contactPhone,
+      landing_contact_email: dto.contactEmail,
+      landing_contact_whatsapp: dto.contactWhatsapp,
+      landing_contact_address: dto.contactAddress,
+      landing_theme_primary: dto.themePrimary,
+      landing_testimonials: dto.testimonials ? JSON.stringify(dto.testimonials) : undefined,
+    };
+
+    for (const [key, val] of Object.entries(keyMap)) {
+      if (val !== undefined) {
+        let setting = await this.settingRepo.findOne({ where: { key } });
+        if (!setting) {
+          setting = this.settingRepo.create({
+            key,
+            value: String(val),
+            category: 'landing',
+            description: `Landing CMS setting for ${key}`,
+          });
+        } else {
+          setting.value = String(val);
+        }
+        await this.settingRepo.save(setting);
+      }
+    }
+
+    // Also sync the subscription plan prices if updated
+    if (dto.plan6MonthsPrice !== undefined || dto.plan1YearPrice !== undefined) {
+      const halfYearPlan = await this.planRepo.findOne({ where: { code: PlanCode.HALF_YEARLY } });
+      if (halfYearPlan && dto.plan6MonthsPrice !== undefined) {
+        halfYearPlan.priceMonthly = dto.plan6MonthsPrice / 6;
+        halfYearPlan.priceYearly = dto.plan6MonthsPrice * 2;
+        await this.planRepo.save(halfYearPlan);
+      }
+      const annualPlan = await this.planRepo.findOne({ where: { code: PlanCode.ANNUAL } });
+      if (annualPlan && dto.plan1YearPrice !== undefined) {
+        annualPlan.priceMonthly = dto.plan1YearPrice / 12;
+        annualPlan.priceYearly = dto.plan1YearPrice;
+        await this.planRepo.save(annualPlan);
+      }
+    }
+
+    return this.getLandingCmsSettings();
+  }
+
+  // ==========================================
+  // DEMO LEADS & INQUIRIES MANAGEMENT
+  // ==========================================
+  async createDemoLead(dto: {
+    restaurantName: string;
+    ownerName: string;
+    phone: string;
+    email?: string;
+    city?: string;
+    seatingCapacity?: string;
+    preferredPlan?: string;
+    notes?: string;
+  }) {
+    const lead = this.leadRepo.create({
+      restaurantName: dto.restaurantName,
+      ownerName: dto.ownerName,
+      phone: dto.phone,
+      email: dto.email,
+      city: dto.city || 'Hyderabad',
+      seatingCapacity: dto.seatingCapacity,
+      preferredPlan: dto.preferredPlan || '1_YEAR',
+      notes: dto.notes,
+      status: 'NEW',
+    });
+    return this.leadRepo.save(lead);
+  }
+
+  async getAllLeads() {
+    return this.leadRepo.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updateLeadStatus(id: string, status: string, notes?: string) {
+    const lead = await this.leadRepo.findOne({ where: { id } });
+    if (!lead) throw new NotFoundException('Lead inquiry not found');
+    lead.status = status;
+    if (notes) lead.notes = notes;
+    return this.leadRepo.save(lead);
+  }
+
+  async convertLeadToTenant(leadId: string) {
+    const lead = await this.leadRepo.findOne({ where: { id: leadId } });
+    if (!lead) throw new NotFoundException('Lead inquiry not found');
+
+    const username = lead.ownerName.toLowerCase().replace(/[^a-z0-9]/g, '') + '_owner';
+    const onboardResult = await this.createRestaurant({
+      name: lead.restaurantName,
+      cuisine: 'Multi-Cuisine',
+      city: lead.city || 'Hyderabad',
+      contactPhone: lead.phone,
+      contactEmail: lead.email,
+      planCode: (lead.preferredPlan === '6_MONTHS' ? 'HALF_YEARLY' : 'ANNUAL') as any,
+      ownerName: lead.ownerName,
+      ownerUsername: username,
+      ownerPassword: 'owner' + Math.floor(1000 + Math.random() * 9000),
+    });
+
+    lead.status = 'CONVERTED';
+    lead.notes = (lead.notes || '') + ` | Converted to Tenant: ${lead.restaurantName} (User: ${username})`;
+    await this.leadRepo.save(lead);
+
+    return { lead, ...onboardResult };
   }
 }

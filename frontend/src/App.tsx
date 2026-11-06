@@ -27,6 +27,7 @@ import { DayClosePage } from './pages/DayClosePage';
 import { CustomersCrmPage } from './pages/CustomersCrmPage';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { RestaurantOwnerDashboard } from './pages/RestaurantOwnerDashboard';
+import { LandingPage } from './pages/LandingPage';
 
 const RoleBasedRedirect: React.FC = () => {
   const { user, isSuperAdmin } = useAuth();
@@ -127,8 +128,11 @@ export const App: React.FC = () => {
           <SettingsProvider>
             <NavProvider>
               <Routes>
-              {/* Public route */}
+              {/* Public Routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/app" element={<RoleBasedRedirect />} />
 
               {/* SaaS Multi-Tenant Platform Routes */}
               <Route

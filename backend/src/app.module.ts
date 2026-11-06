@@ -26,6 +26,7 @@ import { DayClose } from './database/entities/day-close.entity';
 import { TenantRestaurant } from './database/entities/tenant-restaurant.entity';
 import { SubscriptionPlan } from './database/entities/subscription-plan.entity';
 import { TenantSubscription } from './database/entities/tenant-subscription.entity';
+import { LandingLead } from './database/entities/landing-lead.entity';
 
 import { EventsModule } from './events/events.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
@@ -77,6 +78,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
         TenantRestaurant,
         SubscriptionPlan,
         TenantSubscription,
+        LandingLead,
       ],
       synchronize: true, // Auto-creates and syncs schema with safety
       logging: false,
