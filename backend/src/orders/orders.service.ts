@@ -65,7 +65,7 @@ export class OrdersService {
 
   async createOrder(
     tableId: string,
-    itemsData: Array<{ foodItemId: string; quantity: number; specialInstructions?: string }>,
+    itemsData: Array<{ foodItemId: string; quantity: number; specialInstructions?: string; portion?: string; unitPrice?: number }>,
     customerName?: string,
     notes?: string,
     user?: any,
@@ -129,7 +129,19 @@ export class OrdersService {
           throw new BadRequestException(`Food item "${food.name}" is currently Sold Out!`);
         }
 
-        const unitPrice = Number(food.price);
+        let unitPrice = Number(food.price);
+        if (itemInput.portion && Array.isArray(food.portions)) {
+          const matched = food.portions.find(
+            (p) => p.name.toLowerCase() === itemInput.portion?.toLowerCase(),
+          );
+          if (matched && matched.price) {
+            unitPrice = Number(matched.price);
+          }
+        }
+        if (itemInput.unitPrice && Number(itemInput.unitPrice) > 0) {
+          unitPrice = Number(itemInput.unitPrice);
+        }
+
         const totalPrice = unitPrice * itemInput.quantity;
         additionalSubtotal += totalPrice;
 
@@ -140,6 +152,7 @@ export class OrdersService {
           unitPrice,
           totalPrice,
           status: OrderItemStatus.PENDING,
+          portion: itemInput.portion || 'Full',
           specialInstructions: itemInput.specialInstructions,
         });
 

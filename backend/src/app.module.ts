@@ -27,6 +27,7 @@ import { TenantRestaurant } from './database/entities/tenant-restaurant.entity';
 import { SubscriptionPlan } from './database/entities/subscription-plan.entity';
 import { TenantSubscription } from './database/entities/tenant-subscription.entity';
 import { LandingLead } from './database/entities/landing-lead.entity';
+import { TableReservation } from './database/entities/table-reservation.entity';
 
 import { EventsModule } from './events/events.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
@@ -42,6 +43,7 @@ import { BillingModule } from './billing/billing.module';
 import { ReportsModule } from './reports/reports.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { PublicRestaurantModule } from './public-api/public-restaurant.module';
 
 @Module({
   imports: [
@@ -79,6 +81,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
         SubscriptionPlan,
         TenantSubscription,
         LandingLead,
+        TableReservation,
       ],
       synchronize: true, // Auto-creates and syncs schema with safety
       logging: false,
@@ -97,6 +100,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     ReportsModule,
     InventoryModule,
     SuperAdminModule,
+    PublicRestaurantModule,
   ],
 })
 export class AppModule {}

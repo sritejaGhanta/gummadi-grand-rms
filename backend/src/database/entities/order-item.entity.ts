@@ -51,6 +51,9 @@ export class OrderItem {
   specialInstructions: string;
 
   @Column({ nullable: true })
+  portion: string;
+
+  @Column({ nullable: true })
   chefId: string;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })

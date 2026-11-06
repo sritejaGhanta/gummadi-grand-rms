@@ -782,9 +782,19 @@ export const KitchenDashboard: React.FC = () => {
                                   }`}
                                   title={t.foodItem?.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
                                 ></span>
-                                <h4 className="text-xs font-black text-white leading-tight">
-                                  <span className="text-amber-400 font-black mr-1.5">{t.quantity}x</span>
-                                  {t.foodItem?.name}
+                                <h4 className="text-xs font-black text-white leading-tight flex items-center flex-wrap gap-1">
+                                  <span className="text-amber-400 font-black mr-1">{t.quantity}x</span>
+                                  <span>{t.foodItem?.name}</span>
+                                  {t.portion && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                                      [{t.portion}]
+                                    </span>
+                                  )}
+                                  {t.order?.isQrSelfOrder && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold">
+                                      📱 QR Self-Order
+                                    </span>
+                                  )}
                                 </h4>
                               </div>
                             </div>
@@ -933,9 +943,19 @@ export const KitchenDashboard: React.FC = () => {
                             t.foodItem?.isVeg ? 'bg-emerald-400' : 'bg-rose-500'
                           }`}
                         ></span>
-                        <h4 className="text-xs font-extrabold text-white leading-tight">
+                        <h4 className="text-xs font-extrabold text-white leading-tight flex items-center flex-wrap gap-1">
                           <span className="text-amber-400 font-black mr-1">{t.quantity}x</span>
-                          {t.foodItem?.name}
+                          <span>{t.foodItem?.name}</span>
+                          {t.portion && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                              [{t.portion}]
+                            </span>
+                          )}
+                          {t.order?.isQrSelfOrder && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold">
+                              📱 QR
+                            </span>
+                          )}
                         </h4>
                       </div>
 
@@ -1114,9 +1134,19 @@ export const KitchenDashboard: React.FC = () => {
                             t.foodItem?.isVeg ? 'bg-emerald-400' : 'bg-rose-500'
                           }`}
                         ></span>
-                        <h4 className="text-xs font-extrabold text-white leading-tight">
+                        <h4 className="text-xs font-extrabold text-white leading-tight flex items-center flex-wrap gap-1">
                           <span className="text-amber-400 font-black mr-1">{t.quantity}x</span>
-                          {t.foodItem?.name}
+                          <span>{t.foodItem?.name}</span>
+                          {t.portion && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                              [{t.portion}]
+                            </span>
+                          )}
+                          {t.order?.isQrSelfOrder && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold">
+                              📱 QR
+                            </span>
+                          )}
                         </h4>
                       </div>
 

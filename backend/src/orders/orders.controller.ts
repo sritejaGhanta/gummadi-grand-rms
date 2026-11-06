@@ -49,7 +49,7 @@ export class OrdersController {
     @Body()
     body: {
       tableId: string;
-      items: Array<{ foodItemId: string; quantity: number; specialInstructions?: string }>;
+      items: Array<{ foodItemId: string; quantity: number; specialInstructions?: string; portion?: string; unitPrice?: number }>;
       customerName?: string;
       notes?: string;
       subOrder?: string;

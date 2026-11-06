@@ -28,6 +28,7 @@ import { CustomersCrmPage } from './pages/CustomersCrmPage';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { RestaurantOwnerDashboard } from './pages/RestaurantOwnerDashboard';
 import { LandingPage } from './pages/LandingPage';
+import { QrCustomerMenuPage } from './pages/QrCustomerMenuPage';
 
 const RoleBasedRedirect: React.FC = () => {
   const { user, isSuperAdmin } = useAuth();
@@ -131,6 +132,8 @@ export const App: React.FC = () => {
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/landing" element={<LandingPage />} />
+              <Route path="/qr/:slug/:tableNumber" element={<QrCustomerMenuPage />} />
+              <Route path="/menu/:slug/:tableNumber" element={<QrCustomerMenuPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/app" element={<RoleBasedRedirect />} />
 

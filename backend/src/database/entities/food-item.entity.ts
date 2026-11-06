@@ -26,6 +26,9 @@ export class FoodItem {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
+  @Column({ type: 'simple-json', nullable: true })
+  portions: { name: string; price: number; code?: string }[];
+
   @Column({ nullable: true })
   imageUrl: string;
 

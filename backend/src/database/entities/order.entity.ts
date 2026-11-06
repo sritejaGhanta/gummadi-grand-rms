@@ -48,6 +48,12 @@ export class Order {
   customerName: string;
 
   @Column({ nullable: true })
+  customerPhone: string;
+
+  @Column({ default: false })
+  isQrSelfOrder: boolean;
+
+  @Column({ nullable: true })
   notes: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })

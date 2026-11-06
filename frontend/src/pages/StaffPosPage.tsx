@@ -16,6 +16,9 @@ import {
   Search,
   UtensilsCrossed,
   X,
+  QrCode,
+  ExternalLink,
+  Printer,
 } from 'lucide-react';
 
 export const StaffPosPage: React.FC = () => {
@@ -35,7 +38,9 @@ export const StaffPosPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Cart for new items
-  const [cart, setCart] = useState<Record<string, { item: any; quantity: number; notes: string }>>({});
+  const [cart, setCart] = useState<Record<string, { item: any; quantity: number; notes: string; portion?: string; unitPrice?: number }>>({});
+  const [selectedItemPortions, setSelectedItemPortions] = useState<Record<string, string>>({});
+  const [showQrStandModal, setShowQrStandModal] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [subOrders, setSubOrders] = useState<any[]>([]);
   const [currentSubOrder, setCurrentSubOrder] = useState<string>('A');
@@ -231,46 +236,66 @@ export const StaffPosPage: React.FC = () => {
   }, [lastEvent, staffAnalyticsRange]);
 
   // Cart operations
-  const addToCart = (item: any) => {
+  const addToCart = (item: any, explicitPortion?: string) => {
     if (item.availability && !item.availability.isAvailable) {
       setErrorMessage(`Cannot order "${item.name}" - Marked Sold Out by Chef!`);
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
+    const chosenPortion =
+      explicitPortion ||
+      selectedItemPortions[item.id] ||
+      (item.portions && item.portions.length > 0 ? item.portions[0].name : 'Full');
+
+    let unitPrice = Number(item.price);
+    if (item.portions && Array.isArray(item.portions)) {
+      const pMatch = item.portions.find((p: any) => p.name === chosenPortion);
+      if (pMatch && pMatch.price) {
+        unitPrice = Number(pMatch.price);
+      }
+    }
+    const cartKey = `${item.id}_${chosenPortion}`;
+
     setCart((prev) => {
-      const existing = prev[item.id];
+      const existing = prev[cartKey];
       const qty = existing ? existing.quantity + 1 : 1;
       return {
         ...prev,
-        [item.id]: { item, quantity: qty, notes: existing?.notes || '' },
+        [cartKey]: {
+          item,
+          quantity: qty,
+          notes: existing?.notes || '',
+          portion: chosenPortion,
+          unitPrice,
+        },
       };
     });
   };
 
-  const updateQuantity = (itemId: string, delta: number) => {
+  const updateQuantity = (cartKey: string, delta: number) => {
     setCart((prev) => {
-      const existing = prev[itemId];
+      const existing = prev[cartKey];
       if (!existing) return prev;
       const nextQty = existing.quantity + delta;
       if (nextQty <= 0) {
         const copy = { ...prev };
-        delete copy[itemId];
+        delete copy[cartKey];
         return copy;
       }
       return {
         ...prev,
-        [itemId]: { ...existing, quantity: nextQty },
+        [cartKey]: { ...existing, quantity: nextQty },
       };
     });
   };
 
-  const updateItemNotes = (itemId: string, notes: string) => {
+  const updateItemNotes = (cartKey: string, notes: string) => {
     setCart((prev) => {
-      const existing = prev[itemId];
+      const existing = prev[cartKey];
       if (!existing) return prev;
       return {
         ...prev,
-        [itemId]: { ...existing, notes },
+        [cartKey]: { ...existing, notes },
       };
     });
   };
@@ -280,6 +305,8 @@ export const StaffPosPage: React.FC = () => {
     const items = Object.values(cart).map((c) => ({
       foodItemId: c.item.id,
       quantity: c.quantity,
+      portion: c.portion || 'Full',
+      unitPrice: c.unitPrice || Number(c.item.price),
       specialInstructions: c.notes || undefined,
     }));
 
@@ -394,7 +421,7 @@ export const StaffPosPage: React.FC = () => {
   });
 
   const cartTotal = Object.values(cart).reduce(
-    (sum, c) => sum + Number(c.item.price) * c.quantity,
+    (sum, c) => sum + Number(c.unitPrice || c.item.price) * c.quantity,
     0,
   );
 
@@ -600,6 +627,15 @@ export const StaffPosPage: React.FC = () => {
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700">
                       {selectedTable.seatingCapacity} Seats
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowQrStandModal(true)}
+                      className="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-bold flex items-center gap-1 transition shadow-sm"
+                      title="View Acrylic QR Stand"
+                    >
+                      <QrCode className="w-3 h-3" />
+                      <span>Acrylic QR Stand</span>
+                    </button>
                     {subOrders.length > 1 && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                         🤝 Shared Table ({subOrders.length} Parties)
@@ -780,7 +816,14 @@ export const StaffPosPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {filteredItems.map((item) => {
                 const isSoldOut = item.availability && !item.availability.isAvailable;
-                const inCartQty = cart[item.id]?.quantity || 0;
+                const itemCartEntries = Object.entries(cart).filter(([k]) => k.startsWith(item.id));
+                const totalInCartQty = itemCartEntries.reduce((sum, [, c]) => sum + c.quantity, 0);
+                const currentPortion = selectedItemPortions[item.id] || (item.portions && item.portions.length > 0 ? item.portions[0].name : 'Full');
+                let displayPrice = Number(item.price);
+                if (item.portions && Array.isArray(item.portions)) {
+                  const pMatch = item.portions.find((p: any) => p.name === currentPortion);
+                  if (pMatch && pMatch.price) displayPrice = Number(pMatch.price);
+                }
 
                 return (
                   <div
@@ -810,7 +853,7 @@ export const StaffPosPage: React.FC = () => {
                           </span>
                         ) : (
                           <span className="font-bold text-amber-400 text-sm shrink-0">
-                            {currency}{item.price}
+                            {currency}{displayPrice}
                           </span>
                         )}
                       </div>
@@ -818,6 +861,31 @@ export const StaffPosPage: React.FC = () => {
                         <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
                           {item.description}
                         </p>
+                      )}
+
+                      {/* Portion selection buttons */}
+                      {item.portions && item.portions.length > 0 && !isSoldOut && (
+                        <div className="mt-2.5 flex flex-wrap gap-1">
+                          {item.portions.map((p: any) => {
+                            const isSel = currentPortion === p.name;
+                            return (
+                              <button
+                                key={p.name}
+                                type="button"
+                                onClick={() =>
+                                  setSelectedItemPortions((prev) => ({ ...prev, [item.id]: p.name }))
+                                }
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                  isSel
+                                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
+                                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                                }`}
+                              >
+                                {p.name} ₹{p.price}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
 
@@ -828,21 +896,13 @@ export const StaffPosPage: React.FC = () => {
                       </div>
                       {!isSoldOut && (
                         <div className="flex items-center gap-2">
-                          {inCartQty > 0 && (
-                            <>
-                              <button
-                                onClick={() => updateQuantity(item.id, -1)}
-                                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="text-xs font-bold text-amber-400 w-4 text-center">
-                                {inCartQty}
-                              </span>
-                            </>
+                          {totalInCartQty > 0 && (
+                            <span className="text-xs font-bold text-amber-400 px-2 py-0.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                              {totalInCartQty} in cart
+                            </span>
                           )}
                           <button
-                            onClick={() => addToCart(item)}
+                            onClick={() => addToCart(item, currentPortion)}
                             className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-amber-500/10 transition"
                           >
                             <Plus className="w-3 h-3" />
@@ -1068,15 +1128,22 @@ export const StaffPosPage: React.FC = () => {
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1">
-                    {Object.values(cart).map((c) => (
+                    {Object.entries(cart).map(([cartKey, c]) => (
                       <div
-                        key={c.item.id}
+                        key={cartKey}
                         className="p-2 rounded-xl bg-slate-800/60 border border-slate-700/50 text-xs"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-white">{c.item.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-white">{c.item.name}</span>
+                            {c.portion && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                                {c.portion}
+                              </span>
+                            )}
+                          </div>
                           <span className="font-bold text-amber-400">
-                            {currency}{(c.item.price * c.quantity).toFixed(2)}
+                            {currency}{((c.unitPrice || c.item.price) * c.quantity).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between mt-2">
@@ -1084,19 +1151,19 @@ export const StaffPosPage: React.FC = () => {
                             type="text"
                             placeholder="Special note (e.g. less spicy)"
                             value={c.notes}
-                            onChange={(e) => updateItemNotes(c.item.id, e.target.value)}
+                            onChange={(e) => updateItemNotes(cartKey, e.target.value)}
                             className="w-3/5 px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-white placeholder-slate-500 focus:outline-none"
                           />
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => updateQuantity(c.item.id, -1)}
+                              onClick={() => updateQuantity(cartKey, -1)}
                               className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center"
                             >
                               <Minus className="w-2.5 h-2.5" />
                             </button>
                             <span className="font-bold text-amber-400">{c.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(c.item.id, 1)}
+                              onClick={() => updateQuantity(cartKey, 1)}
                               className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center"
                             >
                               <Plus className="w-2.5 h-2.5" />
@@ -1238,6 +1305,72 @@ export const StaffPosPage: React.FC = () => {
                   className="rounded-xl bg-amber-600 px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-amber-500/25 hover:bg-amber-500 transition disabled:opacity-50"
                 >
                   {isMerging ? 'Merging...' : 'Confirm Merge'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Acrylic QR Stand Modal for Diners */}
+      {showQrStandModal && selectedTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowQrStandModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-3">
+              <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest">
+                Acrylic Table Stand
+              </div>
+              <h3 className="text-xl font-black text-white">Table {selectedTable.tableNumber}</h3>
+              <p className="text-xs text-slate-400">
+                Contactless Dine-In QR Ordering. Diners scan and order from their phones.
+              </p>
+
+              {/* QR Stand Card Mockup */}
+              <div className="bg-white p-5 rounded-2xl shadow-xl mx-auto w-48 text-slate-950 flex flex-col items-center border-4 border-amber-500">
+                <div className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+                  AharPOS Smart Dining
+                </div>
+                <div className="text-sm font-black mt-0.5">Table {selectedTable.tableNumber}</div>
+
+                {/* QR Symbol Graphic */}
+                <div className="my-3 p-2 bg-slate-50 border-2 border-slate-900 rounded-xl">
+                  <div className="w-24 h-24 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-white p-1">
+                    <QrCode className="w-16 h-16 text-amber-400" />
+                    <span className="text-[8px] font-mono tracking-tighter text-slate-300">
+                      SCAN TO ORDER
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[9px] font-bold text-center text-slate-700 leading-tight">
+                  Point camera to browse photo menu & select portions!
+                </p>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="pt-2 space-y-2">
+                <a
+                  href={`/restaurant/qr/gummadi-grand/${selectedTable.tableNumber}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Customer Digital Menu</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Acrylic Stand Card</span>
                 </button>
               </div>
             </div>

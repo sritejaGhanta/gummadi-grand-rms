@@ -285,19 +285,78 @@ async function seedSaaS() {
       restaurantId: gummadi.id,
     });
     await catRepo.save(gummadiCat);
+  }
 
-    const items = [
-      { name: 'Gummadi Special Royyala Biryani', price: 380, isVeg: false, isActive: true },
-      { name: 'Natukodi Pulusu & Ragi Sankati', price: 320, isVeg: false, isActive: true },
-      { name: 'Gongura Mutton Roast', price: 360, isVeg: false, isActive: true },
-      { name: 'Andhra Royal Bhojanam', price: 220, isVeg: true, isActive: true },
-      { name: 'Apricot Delight Dessert', price: 150, isVeg: true, isActive: true },
-    ];
-    for (const item of items) {
+  const items = [
+    {
+      name: 'Gummadi Special Royyala Biryani',
+      price: 380,
+      portions: [
+        { name: 'Full', price: 380, code: 'FULL' },
+        { name: 'Half (1/2)', price: 240, code: 'HALF' },
+        { name: 'Single (1/3)', price: 160, code: 'SINGLE' },
+        { name: 'Family Pack', price: 850, code: 'FAMILY' },
+      ],
+      isVeg: false,
+      isActive: true,
+    },
+    {
+      name: 'Natukodi Pulusu & Ragi Sankati',
+      price: 320,
+      portions: [
+        { name: 'Full', price: 320, code: 'FULL' },
+        { name: 'Half (1/2)', price: 200, code: 'HALF' },
+      ],
+      isVeg: false,
+      isActive: true,
+    },
+    {
+      name: 'Gongura Mutton Roast',
+      price: 360,
+      portions: [
+        { name: 'Full', price: 360, code: 'FULL' },
+        { name: 'Half (1/2)', price: 220, code: 'HALF' },
+      ],
+      isVeg: false,
+      isActive: true,
+    },
+    {
+      name: 'Andhra Royal Bhojanam',
+      price: 220,
+      portions: [
+        { name: 'Full Meals', price: 220, code: 'FULL' },
+        { name: 'Mini Meals (1/2)', price: 140, code: 'HALF' },
+      ],
+      isVeg: true,
+      isActive: true,
+    },
+    {
+      name: 'Apricot Delight Dessert',
+      price: 150,
+      portions: [
+        { name: 'Standard (Single)', price: 150, code: 'STD' },
+        { name: 'Family Pack (4 pcs)', price: 480, code: 'FAMILY' },
+      ],
+      isVeg: true,
+      isActive: true,
+    },
+  ];
+  for (const item of items) {
+    const existing = await foodRepo.findOne({
+      where: { name: item.name, restaurantId: gummadi.id },
+    });
+    if (existing) {
+      existing.price = item.price;
+      existing.portions = item.portions;
+      existing.isActive = item.isActive;
+      existing.isVeg = item.isVeg;
+      await foodRepo.save(existing);
+    } else {
       await foodRepo.save(
         foodRepo.create({
           name: item.name,
           price: item.price,
+          portions: item.portions,
           isVeg: item.isVeg,
           isActive: item.isActive,
           categoryId: gummadiCat.id,
