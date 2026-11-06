@@ -10,6 +10,9 @@ export class DayClose {
   closeDate: string; // YYYY-MM-DD
 
   @Column({ nullable: true })
+  restaurantId: string;
+
+  @Column({ nullable: true })
   closedById: string;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })

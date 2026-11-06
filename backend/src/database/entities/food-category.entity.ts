@@ -6,8 +6,11 @@ export class FoodCategory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column()
   name: string; // "Starters", "Biryani", "Main Course", "Beverages", "Desserts"
+
+  @Column({ nullable: true })
+  restaurantId: string;
 
   @Column({ nullable: true })
   description: string;

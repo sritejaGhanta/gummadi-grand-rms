@@ -23,6 +23,9 @@ import { RecipeItem } from './database/entities/recipe-item.entity';
 import { InventoryLog } from './database/entities/inventory-log.entity';
 import { Customer } from './database/entities/customer.entity';
 import { DayClose } from './database/entities/day-close.entity';
+import { TenantRestaurant } from './database/entities/tenant-restaurant.entity';
+import { SubscriptionPlan } from './database/entities/subscription-plan.entity';
+import { TenantSubscription } from './database/entities/tenant-subscription.entity';
 
 import { EventsModule } from './events/events.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
@@ -37,6 +40,7 @@ import { KitchenModule } from './kitchen/kitchen.module';
 import { BillingModule } from './billing/billing.module';
 import { ReportsModule } from './reports/reports.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 @Module({
   imports: [
@@ -70,6 +74,9 @@ import { InventoryModule } from './inventory/inventory.module';
         InventoryLog,
         Customer,
         DayClose,
+        TenantRestaurant,
+        SubscriptionPlan,
+        TenantSubscription,
       ],
       synchronize: true, // Auto-creates and syncs schema with safety
       logging: false,
@@ -87,6 +94,7 @@ import { InventoryModule } from './inventory/inventory.module';
     BillingModule,
     ReportsModule,
     InventoryModule,
+    SuperAdminModule,
   ],
 })
 export class AppModule {}

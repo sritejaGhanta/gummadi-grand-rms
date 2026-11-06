@@ -27,6 +27,9 @@ export class User {
   @Column({ nullable: true })
   roleId: string;
 
+  @Column({ nullable: true })
+  restaurantId: string;
+
   @ManyToOne(() => Role, (role) => role.users, { eager: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'roleId' })
   role: Role;

@@ -25,13 +25,16 @@ import { ChefHistoryPage } from './pages/ChefHistoryPage';
 import { InventoryManagementPage } from './pages/InventoryManagementPage';
 import { DayClosePage } from './pages/DayClosePage';
 import { CustomersCrmPage } from './pages/CustomersCrmPage';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { RestaurantOwnerDashboard } from './pages/RestaurantOwnerDashboard';
 
 const RoleBasedRedirect: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
+  if (isSuperAdmin) return <Navigate to="/super-admin" replace />;
   const role = user.role?.name?.toLowerCase();
   if (role === 'chef') return <Navigate to="/kitchen" replace />;
-  if (role === 'manager') return <Navigate to="/manager" replace />;
+  if (role === 'manager' || role === 'owner') return <Navigate to="/owner-dashboard" replace />;
   if (role === 'admin') return <Navigate to="/admin" replace />;
   return <Navigate to="/pos" replace />;
 };
@@ -40,28 +43,32 @@ const ProtectedLayout: React.FC<{
   children: React.ReactNode;
   requiredPermission?: string;
   requiredRole?: string[];
-}> = ({ children, requiredPermission, requiredRole }) => {
-  const { user, isAdmin, hasPermission } = useAuth();
+  strictRole?: boolean;
+}> = ({ children, requiredPermission, requiredRole, strictRole }) => {
+  const { user, isAdmin, isSuperAdmin, hasPermission } = useAuth();
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   const roleName = user.role?.name?.toLowerCase() || '';
 
-  const hasRoleMatch =
-    !requiredRole ||
-    isAdmin ||
-    requiredRole.map((r) => r.toLowerCase()).includes(roleName);
+  const hasRoleMatch = !requiredRole
+    ? true
+    : strictRole
+    ? requiredRole.map((r) => r.toLowerCase()).includes(roleName) || (requiredRole.includes('superadmin') && isSuperAdmin)
+    : isSuperAdmin || isAdmin || requiredRole.map((r) => r.toLowerCase()).includes(roleName);
 
   const hasPermMatch =
-    !requiredPermission || isAdmin || hasPermission(requiredPermission);
+    !requiredPermission || isSuperAdmin || isAdmin || hasPermission(requiredPermission);
 
   if (!hasRoleMatch || !hasPermMatch) {
     const defaultHome =
-      roleName === 'chef'
+      isSuperAdmin
+        ? '/super-admin'
+        : roleName === 'chef'
         ? '/kitchen'
-        : roleName === 'manager'
-        ? '/manager'
+        : roleName === 'manager' || roleName === 'owner'
+        ? '/owner-dashboard'
         : roleName === 'admin'
         ? '/admin'
         : '/pos';
@@ -122,6 +129,24 @@ export const App: React.FC = () => {
               <Routes>
               {/* Public route */}
               <Route path="/login" element={<LoginPage />} />
+
+              {/* SaaS Multi-Tenant Platform Routes */}
+              <Route
+                path="/super-admin"
+                element={
+                  <ProtectedLayout requiredRole={['superadmin']} strictRole>
+                    <SuperAdminDashboard />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/owner-dashboard"
+                element={
+                  <ProtectedLayout requiredRole={['superadmin', 'admin', 'manager', 'owner']}>
+                    <RestaurantOwnerDashboard />
+                  </ProtectedLayout>
+                }
+              />
 
               {/* Protected routes with Granular RBAC Permissions */}
               <Route

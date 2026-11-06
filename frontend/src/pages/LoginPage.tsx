@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
-import { UtensilsCrossed, Lock, User, Sparkles, Shield, ChefHat, Smartphone, Receipt } from 'lucide-react';
+import { UtensilsCrossed, Lock, User, Sparkles, Shield, ChefHat, Smartphone, Receipt, Globe, Store } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('superadmin');
+  const [password, setPassword] = useState('superadmin123');
   const [error, setError] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
   const { login, loading } = useAuth();
@@ -19,8 +19,10 @@ export const LoginPage: React.FC = () => {
 
   const getDefaultRouteForUser = (userObj: any) => {
     const role = userObj?.role?.name?.toLowerCase();
+    if (role === 'superadmin' || userObj?.username === 'superadmin') return '/super-admin';
+    if (role === 'owner') return '/owner-dashboard';
+    if (role === 'manager') return '/owner-dashboard';
     if (role === 'chef') return '/kitchen';
-    if (role === 'manager') return '/manager';
     if (role === 'admin') return '/admin';
     return '/pos';
   };
@@ -137,9 +139,41 @@ export const LoginPage: React.FC = () => {
           {/* Quick Role Selectors for testing */}
           <div className="pt-4 border-t border-slate-800">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
-              Instant 1-Click Role Logins:
+              Instant 1-Click Role Logins (Petpooja SaaS Hierarchy):
             </p>
             <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => quickLogin('superadmin', 'superadmin123', '/super-admin')}
+                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 border border-amber-500/30 text-xs font-medium text-amber-200 transition text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <div className="font-bold flex items-center gap-1.5 text-white">
+                      Super Admin <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded">YOU</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">superadmin / superadmin123 (SaaS Multi-Tenant MRR)</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => quickLogin('mandiking_owner', 'mandiking123', '/owner-dashboard')}
+                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-purple-500/30 text-xs font-medium text-slate-200 transition text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Store className="w-5 h-5 text-purple-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      Restaurant Owner <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.2 rounded">Mandi King</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">mandiking_owner / mandiking123 (Control Room & Staff)</div>
+                  </div>
+                </div>
+              </button>
+
               <button
                 type="button"
                 onClick={() => quickLogin('admin', 'admin123', '/admin')}
@@ -147,18 +181,18 @@ export const LoginPage: React.FC = () => {
               >
                 <Shield className="w-4 h-4 text-amber-400 shrink-0" />
                 <div>
-                  <div className="font-bold">Admin</div>
+                  <div className="font-bold">Outlet Admin</div>
                   <div className="text-[10px] text-slate-400">admin123</div>
                 </div>
               </button>
               <button
                 type="button"
-                onClick={() => quickLogin('manager', 'manager123', '/manager')}
+                onClick={() => quickLogin('manager', 'manager123', '/owner-dashboard')}
                 className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-200 transition text-left"
               >
                 <Receipt className="w-4 h-4 text-blue-400 shrink-0" />
                 <div>
-                  <div className="font-bold">Manager</div>
+                  <div className="font-bold">Store Manager</div>
                   <div className="text-[10px] text-slate-400">manager123</div>
                 </div>
               </button>
@@ -169,7 +203,7 @@ export const LoginPage: React.FC = () => {
               >
                 <ChefHat className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
-                  <div className="font-bold">Chef</div>
+                  <div className="font-bold">Head Chef</div>
                   <div className="text-[10px] text-slate-400">chef123</div>
                 </div>
               </button>
@@ -180,7 +214,7 @@ export const LoginPage: React.FC = () => {
               >
                 <Smartphone className="w-4 h-4 text-purple-400 shrink-0" />
                 <div>
-                  <div className="font-bold">Waiter / Staff</div>
+                  <div className="font-bold">Waiter (POS)</div>
                   <div className="text-[10px] text-slate-400">waiter123</div>
                 </div>
               </button>

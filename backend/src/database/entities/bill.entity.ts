@@ -18,6 +18,9 @@ export class Bill {
   @Column({ unique: true })
   billNumber: string; // e.g. "BILL-20261031-001"
 
+  @Column({ nullable: true })
+  restaurantId: string;
+
   @Column({ unique: true })
   orderId: string;
 

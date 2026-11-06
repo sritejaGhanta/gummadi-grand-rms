@@ -10,6 +10,9 @@ export class InventoryItem {
   name: string; // e.g. "Chicken Raw", "Basmati Rice", "Cooking Oil"
 
   @Column({ nullable: true })
+  restaurantId: string;
+
+  @Column({ nullable: true })
   sku: string;
 
   @Column({ default: 'General' })

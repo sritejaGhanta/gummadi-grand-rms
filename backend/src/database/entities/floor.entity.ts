@@ -9,6 +9,9 @@ export class Floor {
   @Column()
   name: string; // e.g. "Ground Floor", "First Floor", "Rooftop"
 
+  @Column({ nullable: true })
+  restaurantId: string;
+
   @Column({ default: 0 })
   floorNumber: number;
 

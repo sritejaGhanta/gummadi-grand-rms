@@ -16,6 +16,9 @@ export class RestaurantTable {
   @Column()
   tableNumber: string; // e.g. "T-01", "T-02"
 
+  @Column({ nullable: true })
+  restaurantId: string;
+
   @Column()
   floorId: string;
 

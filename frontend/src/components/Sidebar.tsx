@@ -18,10 +18,12 @@ import {
   Boxes,
   Lock,
   Gift,
+  Crown,
+  Building2,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const { isAdmin, isManager, isChef, isStaff, hasPermission } = useAuth();
+  const { isSuperAdmin, isAdmin, isManager, isChef, isStaff, hasPermission } = useAuth();
   const { isMobileOpen, closeMobile } = useNav();
   const location = useLocation();
 
@@ -31,12 +33,26 @@ export const Sidebar: React.FC = () => {
   }, [location.pathname]);
 
   const links = [
+    // 0. Super Admin SaaS Platform (Super Admin only)
+    {
+      to: '/super-admin',
+      label: 'Super Admin (SaaS)',
+      icon: Crown,
+      show: isSuperAdmin,
+    },
+    // 0b. Restaurant Owner Control Room
+    {
+      to: '/owner-dashboard',
+      label: 'Restaurant Control Room',
+      icon: Building2,
+      show: isSuperAdmin || isAdmin || isManager,
+    },
     // 1. Admin Executive Dashboard (Admin only)
     {
       to: '/admin',
       label: 'Admin Overview',
       icon: LayoutDashboard,
-      show: isAdmin,
+      show: isSuperAdmin || isAdmin,
     },
     // 2. Manager Operations & Cashier Billing (Topmost #1 for Manager)
     {

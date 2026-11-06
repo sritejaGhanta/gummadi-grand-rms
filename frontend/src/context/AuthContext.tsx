@@ -21,6 +21,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasPermission: (permissionKey: string) => boolean;
+  isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
   isChef: boolean;
@@ -86,13 +87,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   const roleName = user?.role?.name?.toLowerCase() || '';
-  const isAdmin = roleName === 'admin';
+  const isSuperAdmin = roleName === 'superadmin' || user?.username === 'superadmin';
+  const isAdmin = isSuperAdmin || roleName === 'admin';
   const isManager = roleName === 'manager';
   const isChef = roleName === 'chef';
   const isStaff = roleName === 'staff' || roleName === 'waiter';
 
   const hasPermission = (permissionKey: string): boolean => {
-    if (isAdmin) return true;
+    if (isSuperAdmin || isAdmin) return true;
     return user?.permissions?.includes(permissionKey) || false;
   };
 
@@ -105,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         refreshProfile,
         hasPermission,
+        isSuperAdmin,
         isAdmin,
         isManager,
         isChef,

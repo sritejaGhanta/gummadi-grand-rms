@@ -17,6 +17,9 @@ export class Order {
   @Column({ unique: true })
   orderNumber: string; // e.g. "ORD-20261031-001"
 
+  @Column({ nullable: true })
+  restaurantId: string;
+
   @Column()
   tableId: string;
 

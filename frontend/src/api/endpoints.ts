@@ -143,3 +143,14 @@ export const settingsApi = {
 export const logsApi = {
   getLogs: (limit = 100, offset = 0) => apiClient.get('/activity-logs', { params: { limit, offset } }),
 };
+
+export const superAdminApi = {
+  getMetrics: () => apiClient.get('/super-admin/metrics'),
+  getRestaurants: () => apiClient.get('/super-admin/restaurants'),
+  createRestaurant: (data: any) => apiClient.post('/super-admin/restaurants', data),
+  updateStatus: (id: string, status: string) => apiClient.patch(`/super-admin/restaurants/${id}/status`, { status }),
+  getPlans: () => apiClient.get('/super-admin/plans'),
+  recordSubscription: (data: any) => apiClient.post('/super-admin/subscriptions/record', data),
+  getStaff: (restaurantId: string) => apiClient.get(`/super-admin/restaurants/${restaurantId}/staff`),
+  addStaff: (restaurantId: string, data: any) => apiClient.post(`/super-admin/restaurants/${restaurantId}/staff`, data),
+};
