@@ -38,6 +38,9 @@ export class Order {
   })
   status: OrderStatus;
 
+  @Column({ default: 'A', length: 10 })
+  subOrder: string; // 'A', 'B', 'C' for shared table seating
+
   @Column({ nullable: true })
   customerName: string;
 

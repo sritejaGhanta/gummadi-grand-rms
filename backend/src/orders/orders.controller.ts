@@ -24,8 +24,15 @@ export class OrdersController {
   @Get('table/:tableId/active')
   @RequirePermissions('orders.view')
   @ApiOperation({ summary: 'Get active order for a table' })
-  async getActiveByTable(@Param('tableId') tableId: string) {
-    return this.service.findActiveByTable(tableId);
+  async getActiveByTable(@Param('tableId') tableId: string, @Query('subOrder') subOrder?: string) {
+    return this.service.findActiveByTable(tableId, subOrder);
+  }
+
+  @Get('table/:tableId/active-all')
+  @RequirePermissions('orders.view')
+  @ApiOperation({ summary: 'Get all active sub-orders for a shared table' })
+  async getAllActiveByTable(@Param('tableId') tableId: string) {
+    return this.service.findAllActiveByTable(tableId);
   }
 
   @Get(':id')
@@ -37,7 +44,7 @@ export class OrdersController {
 
   @Post()
   @RequirePermissions('orders.create')
-  @ApiOperation({ summary: 'Create or add to an order for a table' })
+  @ApiOperation({ summary: 'Create or add to an order for a table (supports sub-table sharing)' })
   async createOrder(
     @Body()
     body: {
@@ -45,10 +52,18 @@ export class OrdersController {
       items: Array<{ foodItemId: string; quantity: number; specialInstructions?: string }>;
       customerName?: string;
       notes?: string;
+      subOrder?: string;
     },
     @CurrentUser() user: any,
   ) {
-    return this.service.createOrder(body.tableId, body.items, body.customerName, body.notes, user);
+    return this.service.createOrder(
+      body.tableId,
+      body.items,
+      body.customerName,
+      body.notes,
+      user,
+      body.subOrder || 'A',
+    );
   }
 
   @Put('items/:itemId/deliver')
@@ -72,7 +87,33 @@ export class OrdersController {
   @Post('tables/:tableId/request-bill')
   @RequirePermissions('orders.update')
   @ApiOperation({ summary: 'Staff requests bill generation for a table' })
-  async requestBill(@Param('tableId') tableId: string, @CurrentUser() user: any) {
-    return this.service.requestBill(tableId, user);
+  async requestBill(
+    @Param('tableId') tableId: string,
+    @Body() body: { orderId?: string; subOrder?: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.service.requestBill(tableId, user, body?.orderId, body?.subOrder);
+  }
+
+  @Post(':id/transfer-table')
+  @RequirePermissions('orders.update')
+  @ApiOperation({ summary: 'Shift/transfer active order to a new table' })
+  async transferTable(
+    @Param('id') id: string,
+    @Body('newTableId') newTableId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.service.transferTable(id, newTableId, user);
+  }
+
+  @Post(':id/merge-table')
+  @RequirePermissions('orders.update')
+  @ApiOperation({ summary: 'Merge an active table into target order' })
+  async mergeTable(
+    @Param('id') id: string,
+    @Body('sourceTableId') sourceTableId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.service.mergeTable(id, sourceTableId, user);
   }
 }

@@ -348,11 +348,13 @@ export const KitchenDashboard: React.FC = () => {
     > = {};
 
     for (const t of pendingTasks) {
-      const tableKey = t.order?.tableId || t.order?.id || 'takeaway';
+      const sub = t.order?.subOrder ? `-${t.order.subOrder}` : '';
+      const tableKey = `${t.order?.tableId || t.order?.id || 'takeaway'}${sub}`;
       if (!map[tableKey]) {
+        const subLabel = t.order?.subOrder ? ` (Guest ${t.order.subOrder})` : '';
         map[tableKey] = {
           tableId: tableKey,
-          tableNumber: t.order?.table?.tableNumber || 'Takeaway',
+          tableNumber: `${t.order?.table?.tableNumber || 'Takeaway'}${subLabel}`,
           floorName: t.order?.table?.floor?.name || 'Main Hall',
           waiterName: t.order?.waiter?.name || 'Assigned Waiter',
           oldestCreatedAt: t.createdAt,

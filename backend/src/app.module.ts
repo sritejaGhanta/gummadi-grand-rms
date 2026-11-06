@@ -18,6 +18,11 @@ import { Payment } from './database/entities/payment.entity';
 import { ActivityLog } from './database/entities/activity-log.entity';
 import { ApplicationSetting } from './database/entities/application-setting.entity';
 import { Notification } from './database/entities/notification.entity';
+import { InventoryItem } from './database/entities/inventory-item.entity';
+import { RecipeItem } from './database/entities/recipe-item.entity';
+import { InventoryLog } from './database/entities/inventory-log.entity';
+import { Customer } from './database/entities/customer.entity';
+import { DayClose } from './database/entities/day-close.entity';
 
 import { EventsModule } from './events/events.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
@@ -31,6 +36,7 @@ import { OrdersModule } from './orders/orders.module';
 import { KitchenModule } from './kitchen/kitchen.module';
 import { BillingModule } from './billing/billing.module';
 import { ReportsModule } from './reports/reports.module';
+import { InventoryModule } from './inventory/inventory.module';
 
 @Module({
   imports: [
@@ -59,6 +65,11 @@ import { ReportsModule } from './reports/reports.module';
         ActivityLog,
         ApplicationSetting,
         Notification,
+        InventoryItem,
+        RecipeItem,
+        InventoryLog,
+        Customer,
+        DayClose,
       ],
       synchronize: true, // Auto-creates and syncs schema with safety
       logging: false,
@@ -75,6 +86,7 @@ import { ReportsModule } from './reports/reports.module';
     KitchenModule,
     BillingModule,
     ReportsModule,
+    InventoryModule,
   ],
 })
 export class AppModule {}

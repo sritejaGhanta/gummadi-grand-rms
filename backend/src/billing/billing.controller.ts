@@ -22,6 +22,54 @@ export class BillingController {
     return this.service.findAll(status);
   }
 
+  // --- Day Close (EOD) Endpoints ---
+  @Get('day-summary')
+  @RequirePermissions('billing.view')
+  @ApiOperation({ summary: 'Get live daily cash and sales summary for EOD closing' })
+  async getDaySummary(@Query('date') date?: string) {
+    return this.service.getDaySummary(date);
+  }
+
+  @Post('day-close')
+  @RequirePermissions('billing.create')
+  @ApiOperation({ summary: 'Submit Day Close EOD Cash Reconciliation' })
+  async recordDayClose(
+    @Body() body: { date?: string; actualCashCounted: number; notes?: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.service.recordDayClose(body, user);
+  }
+
+  @Get('day-close/history')
+  @RequirePermissions('billing.view')
+  @ApiOperation({ summary: 'Get previous day close logs' })
+  async getDayCloseHistory() {
+    return this.service.getDayCloseHistory();
+  }
+
+  // --- Customer CRM Endpoints ---
+  @Get('customers/lookup')
+  @RequirePermissions('billing.view')
+  @ApiOperation({ summary: 'Lookup customer by phone for repeat visits & loyalty points' })
+  async lookupCustomer(@Query('phone') phone: string) {
+    return this.service.lookupCustomer(phone);
+  }
+
+  @Get('customers/top')
+  @RequirePermissions('billing.view')
+  @ApiOperation({ summary: 'Get top spending customers' })
+  async getTopCustomers() {
+    return this.service.getTopCustomers();
+  }
+
+  // --- WhatsApp Digital Bill ---
+  @Get(':id/whatsapp')
+  @RequirePermissions('billing.view')
+  @ApiOperation({ summary: 'Generate formatted WhatsApp digital receipt' })
+  async getWhatsAppBill(@Param('id') id: string) {
+    return this.service.generateWhatsAppBill(id);
+  }
+
   @Get(':id')
   @RequirePermissions('billing.view')
   @ApiOperation({ summary: 'Get bill by id' })
@@ -38,12 +86,23 @@ export class BillingController {
 
   @Post('generate')
   @RequirePermissions('billing.create')
-  @ApiOperation({ summary: 'Generate a bill for an active order' })
+  @ApiOperation({ summary: 'Generate a bill for an active order with customer & loyalty support' })
   async generateBill(
-    @Body() body: { orderId: string; discountAmount?: number },
+    @Body()
+    body: {
+      orderId: string;
+      discountAmount?: number;
+      customerName?: string;
+      customerPhone?: string;
+      redeemPoints?: number;
+    },
     @CurrentUser() user: any,
   ) {
-    return this.service.generateBill(body.orderId, body.discountAmount || 0, user);
+    return this.service.generateBill(body.orderId, body.discountAmount || 0, user, {
+      name: body.customerName,
+      phone: body.customerPhone,
+      redeemPoints: body.redeemPoints,
+    });
   }
 
   @Post(':id/payment')

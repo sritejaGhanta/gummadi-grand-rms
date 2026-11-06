@@ -32,6 +32,9 @@ export class Bill {
   @JoinColumn({ name: 'tableId' })
   table: RestaurantTable;
 
+  @Column({ default: 'A', length: 10 })
+  subOrder: string;
+
   @Column({ nullable: true })
   generatedById: string;
 
@@ -50,6 +53,18 @@ export class Bill {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   discountAmount: number;
+
+  @Column({ nullable: true })
+  customerName: string;
+
+  @Column({ nullable: true })
+  customerPhone: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  loyaltyPointsEarned: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  loyaltyPointsRedeemed: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   grandTotal: number;

@@ -5,6 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { PrintableBill } from '../components/PrintableBill';
+import { ThermalReceiptModal } from '../components/ThermalReceiptModal';
 import {
   DollarSign,
   Receipt,
@@ -28,6 +29,10 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Share2,
+  Boxes,
+  Lock,
+  Gift,
 } from 'lucide-react';
 
 export const ManagerDashboard: React.FC = () => {
@@ -44,9 +49,19 @@ export const ManagerDashboard: React.FC = () => {
 
   // Settlement & Payment Modal
   const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [custLookupResult, setCustLookupResult] = useState<any | null>(null);
+  const [redeemPoints, setRedeemPoints] = useState<number>(0);
 
   const [activeBill, setActiveBill] = useState<any | null>(null);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [thermalBill, setThermalBill] = useState<any | null>(null);
+
+  // Split Bill Modal
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [splitBillTarget, setSplitBillTarget] = useState<any | null>(null);
+  const [splitCount, setSplitCount] = useState<number>(2);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -112,15 +127,63 @@ export const ManagerDashboard: React.FC = () => {
     }
   }, [lastEvent]);
 
+  // Customer Phone lookup
+  const handlePhoneChange = async (val: string) => {
+    setCustomerPhone(val);
+    const clean = val.replace(/\D/g, '');
+    if (clean.length === 10) {
+      try {
+        const res = await billingApi.lookupCustomer(clean);
+        const data = res.data?.data || res.data;
+        if (data?.found && data.customer) {
+          setCustLookupResult(data.customer);
+          if (!customerName) setCustomerName(data.customer.name);
+        } else {
+          setCustLookupResult(null);
+        }
+      } catch (e) {
+        setCustLookupResult(null);
+      }
+    } else {
+      setCustLookupResult(null);
+    }
+  };
+
+  // WhatsApp Bill Direct Share
+  const handleWhatsAppShare = async (billId: string) => {
+    try {
+      const res = await billingApi.getWhatsAppBill(billId);
+      const url = res.data?.data?.waUrl || res.data?.waUrl;
+      if (url) {
+        window.open(url, '_blank');
+        setActionSuccess('WhatsApp digital bill opened!');
+        setTimeout(() => setActionSuccess(null), 3000);
+      }
+    } catch (err: any) {
+      setActionError('Failed to generate WhatsApp bill');
+    }
+  };
+
   // Generate Bill action
   const handleGenerateBill = async (orderId: string) => {
     try {
       setActionError(null);
-      const bill = await billingApi.generateBill(orderId, discountAmount);
+      const res = await billingApi.generateBill({
+        orderId,
+        discountAmount,
+        customerName: customerName || undefined,
+        customerPhone: customerPhone || undefined,
+        redeemPoints: redeemPoints || 0,
+      });
+      const bill = res.data?.data || res.data || res;
       setActiveBill(bill);
       setShowBillModal(true);
       setActionSuccess(`Bill ${bill.billNumber} generated successfully!`);
       setTimeout(() => setActionSuccess(null), 3000);
+      setCustomerPhone('');
+      setCustomerName('');
+      setRedeemPoints(0);
+      setCustLookupResult(null);
       loadData();
     } catch (err: any) {
       setActionError(err.message || 'Failed to generate bill');
@@ -322,30 +385,57 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* MAIN NAVIGATION TABS: Active Operations VS Old Bills Archive */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-        <button
-          onClick={() => setMainTab('ACTIVE')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
-            mainTab === 'ACTIVE'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-              : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          <span>Active Checkout & Unpaid Bills ({unpaidBills.length})</span>
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMainTab('ACTIVE')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
+              mainTab === 'ACTIVE'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Active Checkout & Unpaid Bills ({unpaidBills.length})</span>
+          </button>
 
-        <button
-          onClick={() => setMainTab('OLD_BILLS')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
-            mainTab === 'OLD_BILLS'
-              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-              : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          <span>Old & Settled Bills Archive ({paidBills.length})</span>
-        </button>
+          <button
+            onClick={() => setMainTab('OLD_BILLS')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
+              mainTab === 'OLD_BILLS'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
+            }`}
+          >
+            <History className="w-4 h-4" />
+            <span>Old & Settled Bills Archive ({paidBills.length})</span>
+          </button>
+        </div>
+
+        {/* Quick Operations Links */}
+        <div className="flex items-center gap-2">
+          <a
+            href="/inventory"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 text-xs font-semibold transition"
+          >
+            <Boxes className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Stock Inventory</span>
+          </a>
+          <a
+            href="/day-close"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 text-xs font-semibold transition"
+          >
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Day-End (EOD) Close</span>
+          </a>
+          <a
+            href="/customers"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 text-xs font-semibold transition"
+          >
+            <Gift className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Customer CRM</span>
+          </a>
+        </div>
       </div>
 
       {/* TAB 1: ACTIVE SETTLEMENT & CHECKOUT QUEUE */}
@@ -380,6 +470,11 @@ export const ManagerDashboard: React.FC = () => {
                               ? ord.table.tableNumber
                               : `Table ${ord.table?.tableNumber || 'Takeaway'}`}
                           </span>
+                          {ord.subOrder && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
+                              Guest {ord.subOrder}
+                            </span>
+                          )}
                           {ord.table?.status === 'BILLING' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/20 text-blue-400 border border-blue-500/30 animate-pulse">
                               🔔 BILL REQUESTED
@@ -438,6 +533,11 @@ export const ManagerDashboard: React.FC = () => {
                               ? b.table.tableNumber
                               : `Table ${b.table?.tableNumber || 'Takeaway'}`}
                           </span>
+                          {b.subOrder && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
+                              Guest {b.subOrder}
+                            </span>
+                          )}
                           <span className="font-mono text-white text-xs font-bold">{b.billNumber}</span>
                         </div>
                         <div className="text-xs text-slate-400">
@@ -445,7 +545,7 @@ export const ManagerDashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                      <div className="flex items-center justify-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
                         <button
                           onClick={() => {
                             setActiveBill(b);
@@ -455,6 +555,31 @@ export const ManagerDashboard: React.FC = () => {
                           title="View & Print Bill"
                         >
                           <Printer className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setThermalBill(b)}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white transition"
+                          title="Thermal Receipt (58mm / 80mm ESC/POS)"
+                        >
+                          <Printer className="w-4 h-4 text-indigo-400" />
+                        </button>
+                        <button
+                          onClick={() => handleWhatsAppShare(b.id)}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-white transition"
+                          title="Send WhatsApp Digital Bill"
+                        >
+                          <Share2 className="w-4 h-4 text-emerald-400" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSplitBillTarget(b);
+                            setSplitCount(2);
+                            setShowSplitModal(true);
+                          }}
+                          className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white transition text-xs font-bold"
+                          title="Split Bill (Equal Share / Multi-guest)"
+                        >
+                          ½ Split
                         </button>
                         <button
                           onClick={() => openPayment(b)}
@@ -769,17 +894,33 @@ export const ManagerDashboard: React.FC = () => {
                           {currency}{Number(bill.grandTotal).toFixed(2)}
                         </td>
                         <td className="py-3 px-3 text-center">
-                          <button
-                            onClick={() => {
-                              setActiveBill(bill);
-                              setShowBillModal(true);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 transition"
-                            title="View & Reprint Receipt"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-amber-400" />
-                            <span>View Bill</span>
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setActiveBill(bill);
+                                setShowBillModal(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold inline-flex items-center gap-1 transition"
+                              title="View & Reprint Receipt"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-amber-400" />
+                              <span>View</span>
+                            </button>
+                            <button
+                              onClick={() => setThermalBill(bill)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-white border border-slate-700 transition"
+                              title="Thermal Roll Print (58mm/80mm)"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleWhatsAppShare(bill.id)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-white border border-slate-700 transition"
+                              title="Send WhatsApp Bill"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -858,18 +999,119 @@ export const ManagerDashboard: React.FC = () => {
         {activeBill && (
           <div className="space-y-4">
             <PrintableBill bill={activeBill} />
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition"
+                onClick={() => handleWhatsAppShare(activeBill.id)}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow"
               >
-                <Printer className="w-4 h-4" />
-                <span>Print Physical Bill</span>
+                <Share2 className="w-4 h-4" />
+                <span>WhatsApp Bill</span>
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setThermalBill(activeBill)}
+                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Thermal Roll Slip</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>A4 Print</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
       </Modal>
+
+      {/* Thermal Receipt Roll Modal (58mm / 80mm ESC/POS) */}
+      {thermalBill && (
+        <ThermalReceiptModal bill={thermalBill} onClose={() => setThermalBill(null)} />
+      )}
+
+      {/* Split Bill Modal */}
+      {showSplitModal && splitBillTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-white mb-1">
+              Split Bill: <span className="text-amber-400 font-mono">{splitBillTarget.billNumber}</span>
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Total Outstanding: <strong className="text-emerald-400">{currency}{splitBillTarget.grandTotal}</strong>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-2">
+                  Number of Guests (Equal Split)
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setSplitCount(num)}
+                      className={`py-2 rounded-xl text-xs font-bold transition border ${
+                        splitCount === num
+                          ? 'bg-amber-500 text-slate-950 border-amber-500'
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600'
+                      }`}
+                    >
+                      {num} Guests
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-950 p-4 border border-slate-800 text-center">
+                <div className="text-xs text-slate-400">Each Guest's Individual Share ({splitCount} parts)</div>
+                <div className="text-2xl font-mono font-black text-amber-400 mt-1">
+                  {currency}{(Number(splitBillTarget.grandTotal) / splitCount).toFixed(2)}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {Array.from({ length: splitCount }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-xl bg-slate-950/80 p-3 border border-slate-800">
+                    <span className="text-xs font-bold text-white">Guest #{i + 1} Portion:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-amber-300 font-bold">
+                        {currency}{(Number(splitBillTarget.grandTotal) / splitCount).toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSplitModal(false);
+                          setActiveBill(splitBillTarget);
+                          setPaymentAmount(Number((Number(splitBillTarget.grandTotal) / splitCount).toFixed(2)));
+                          setShowPaymentModal(true);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition"
+                      >
+                        Settle Part #{i + 1}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSplitModal(false)}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payment Processing Modal */}
       <Modal

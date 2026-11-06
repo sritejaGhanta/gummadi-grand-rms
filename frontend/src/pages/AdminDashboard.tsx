@@ -49,6 +49,9 @@ import {
   BarChart3,
   PieChart as PieIcon,
   Activity,
+  Boxes,
+  Lock,
+  Gift,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -278,8 +281,29 @@ export const AdminDashboard: React.FC = () => {
             <span>Refresh</span>
           </button>
           <Link
-            to="/settings"
+            to="/inventory"
+            className="px-3.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+          >
+            <Boxes className="w-3.5 h-3.5" />
+            <span>Stock Inventory</span>
+          </Link>
+          <Link
+            to="/day-close"
             className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>EOD Close</span>
+          </Link>
+          <Link
+            to="/customers"
+            className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+          >
+            <Gift className="w-3.5 h-3.5" />
+            <span>CRM & Guests</span>
+          </Link>
+          <Link
+            to="/settings"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition shadow-sm"
           >
             <Palette className="w-3.5 h-3.5" />
             <span>Theme Colors</span>

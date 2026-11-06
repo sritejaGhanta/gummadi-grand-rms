@@ -22,6 +22,9 @@ import { SettingsPage } from './pages/SettingsPage';
 import { UsersManagementPage } from './pages/UsersManagementPage';
 import { StaffPerformancePage } from './pages/StaffPerformancePage';
 import { ChefHistoryPage } from './pages/ChefHistoryPage';
+import { InventoryManagementPage } from './pages/InventoryManagementPage';
+import { DayClosePage } from './pages/DayClosePage';
+import { CustomersCrmPage } from './pages/CustomersCrmPage';
 
 const RoleBasedRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -166,6 +169,30 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedLayout requiredPermission="billing.create">
                     <ManagerDashboard />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/inventory"
+                element={
+                  <ProtectedLayout requiredRole={['admin', 'manager']}>
+                    <InventoryManagementPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/day-close"
+                element={
+                  <ProtectedLayout requiredRole={['admin', 'manager']}>
+                    <DayClosePage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/customers"
+                element={
+                  <ProtectedLayout requiredRole={['admin', 'manager']}>
+                    <CustomersCrmPage />
                   </ProtectedLayout>
                 }
               />

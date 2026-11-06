@@ -15,6 +15,9 @@ import {
   X,
   Users,
   Activity,
+  Boxes,
+  Lock,
+  Gift,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -56,7 +59,28 @@ export const Sidebar: React.FC = () => {
       icon: ChefHat,
       show: isAdmin || isManager || isChef,
     },
-    // 5. Dedicated Chef Preparation & Cooking History (Separate Menu Option)
+    // 5. Inventory & Stock Tracking
+    {
+      to: '/inventory',
+      label: 'Inventory & Stock',
+      icon: Boxes,
+      show: isAdmin || isManager,
+    },
+    // 6. End-of-Day (EOD) Reconciliation
+    {
+      to: '/day-close',
+      label: 'Day-End Cash Close (EOD)',
+      icon: Lock,
+      show: isAdmin || isManager,
+    },
+    // 7. Customers & Loyalty CRM
+    {
+      to: '/customers',
+      label: 'Customer CRM & Loyalty',
+      icon: Gift,
+      show: isAdmin || isManager,
+    },
+    // 8. Dedicated Chef Preparation & Cooking History (Separate Menu Option)
     {
       to: '/kitchen/history',
       label: 'Chef Cooking History',

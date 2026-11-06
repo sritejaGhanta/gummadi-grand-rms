@@ -48,6 +48,8 @@ export const apiClient = {
     instance.post(url, data, config) as any,
   put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
     instance.put(url, data, config) as any,
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
+    instance.patch(url, data, config) as any,
   delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> =>
     instance.delete(url, config) as any,
 };

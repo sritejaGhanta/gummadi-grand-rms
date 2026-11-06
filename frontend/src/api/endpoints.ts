@@ -39,16 +39,24 @@ export const menuApi = {
 
 export const ordersApi = {
   getOrders: (status?: string) => apiClient.get('/orders', { params: { status } }),
-  getActiveByTable: (tableId: string) => apiClient.get(`/orders/table/${tableId}/active`),
+  getActiveByTable: (tableId: string, subOrder?: string) =>
+    apiClient.get(`/orders/table/${tableId}/active`, { params: { subOrder } }),
+  getAllActiveByTable: (tableId: string) => apiClient.get(`/orders/table/${tableId}/active-all`),
   createOrder: (data: {
     tableId: string;
     items: Array<{ foodItemId: string; quantity: number; specialInstructions?: string }>;
     customerName?: string;
     notes?: string;
+    subOrder?: string;
   }) => apiClient.post('/orders', data),
   markItemDelivered: (itemId: string) => apiClient.put(`/orders/items/${itemId}/deliver`),
   cancelItem: (itemId: string, reason?: string) => apiClient.put(`/orders/items/${itemId}/cancel`, { reason }),
-  requestBill: (tableId: string) => apiClient.post(`/orders/tables/${tableId}/request-bill`),
+  requestBill: (tableId: string, data?: { orderId?: string; subOrder?: string }) =>
+    apiClient.post(`/orders/tables/${tableId}/request-bill`, data || {}),
+  transferTable: (orderId: string, newTableId: string) =>
+    apiClient.post(`/orders/${orderId}/transfer-table`, { newTableId }),
+  mergeTable: (orderId: string, sourceTableId: string) =>
+    apiClient.post(`/orders/${orderId}/merge-table`, { sourceTableId }),
 };
 
 export const kitchenApi = {
@@ -65,10 +73,36 @@ export const kitchenApi = {
 export const billingApi = {
   getBills: (status?: string) => apiClient.get('/billing', { params: { status } }),
   getBillById: (id: string) => apiClient.get(`/billing/${id}`),
-  generateBill: (orderId: string, discountAmount = 0) =>
-    apiClient.post('/billing/generate', { orderId, discountAmount }),
+  generateBill: (data: {
+    orderId: string;
+    discountAmount?: number;
+    customerName?: string;
+    customerPhone?: string;
+    redeemPoints?: number;
+  }) => apiClient.post('/billing/generate', data),
   recordPayment: (billId: string, data: { amount: number; paymentMethod: string; transactionReference?: string; notes?: string }) =>
     apiClient.post(`/billing/${billId}/payment`, data),
+  getWhatsAppBill: (billId: string) => apiClient.get(`/billing/${billId}/whatsapp`),
+  lookupCustomer: (phone: string) => apiClient.get('/billing/customers/lookup', { params: { phone } }),
+  getTopCustomers: () => apiClient.get('/billing/customers/top'),
+  getDaySummary: (date?: string) => apiClient.get('/billing/day-summary', { params: { date } }),
+  recordDayClose: (data: { date?: string; actualCashCounted: number; notes?: string }) =>
+    apiClient.post('/billing/day-close', data),
+  getDayCloseHistory: () => apiClient.get('/billing/day-close/history'),
+};
+
+export const inventoryApi = {
+  getItems: (category?: string) => apiClient.get('/inventory', { params: { category } }),
+  getAlerts: () => apiClient.get('/inventory/alerts'),
+  getItem: (id: string) => apiClient.get(`/inventory/${id}`),
+  createItem: (data: any) => apiClient.post('/inventory', data),
+  updateItem: (id: string, data: any) => apiClient.patch(`/inventory/${id}`, data),
+  adjustStock: (id: string, data: { quantity: number; changeType: string; reason?: string }) =>
+    apiClient.post(`/inventory/${id}/adjust`, data),
+  getLogs: (inventoryItemId?: string) => apiClient.get('/inventory/logs', { params: { inventoryItemId } }),
+  getRecipe: (foodItemId: string) => apiClient.get(`/inventory/recipes/${foodItemId}`),
+  saveRecipe: (foodItemId: string, ingredients: Array<{ inventoryItemId: string; quantityRequired: number; unit?: string }>) =>
+    apiClient.post(`/inventory/recipes/${foodItemId}`, { ingredients }),
 };
 
 export const reportsApi = {
