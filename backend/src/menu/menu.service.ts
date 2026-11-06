@@ -21,7 +21,13 @@ export class MenuService {
   ) {}
 
   // Categories
-  async findAllCategories() {
+  async findAllCategories(restaurantId?: string) {
+    if (restaurantId) {
+      return this.categoryRepo.find({
+        where: { restaurantId },
+        order: { displayOrder: 'ASC', name: 'ASC' },
+      });
+    }
     return this.categoryRepo.find({
       order: { displayOrder: 'ASC', name: 'ASC' },
     });
@@ -62,7 +68,7 @@ export class MenuService {
   }
 
   // Food Items
-  async findAllItems(categoryId?: string, activeOnly = false) {
+  async findAllItems(categoryId?: string, activeOnly = false, restaurantId?: string) {
     const qb = this.itemRepo
       .createQueryBuilder('item')
       .leftJoinAndSelect('item.category', 'category')
@@ -75,6 +81,9 @@ export class MenuService {
     }
     if (activeOnly) {
       qb.andWhere('item.isActive = true');
+    }
+    if (restaurantId) {
+      qb.andWhere('item.restaurantId = :restaurantId', { restaurantId });
     }
 
     return qb.getMany();

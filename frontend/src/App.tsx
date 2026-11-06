@@ -170,6 +170,14 @@ export const App: React.FC = () => {
                 }
               />
               <Route
+                path="/staff-pos"
+                element={
+                  <ProtectedLayout requiredPermission="orders.view">
+                    <StaffPosPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
                 path="/kitchen"
                 element={
                   <ProtectedLayout requiredPermission="kitchen.view">

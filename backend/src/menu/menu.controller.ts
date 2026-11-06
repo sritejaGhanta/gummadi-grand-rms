@@ -16,8 +16,9 @@ export class MenuController {
   // Categories
   @Get('categories')
   @ApiOperation({ summary: 'Get all food categories' })
-  async getCategories() {
-    return this.service.findAllCategories();
+  async getCategories(@CurrentUser() user?: any, @Query('restaurantId') queryRestId?: string) {
+    const restaurantId = user?.restaurantId || queryRestId;
+    return this.service.findAllCategories(restaurantId);
   }
 
   @Post('categories')
@@ -50,8 +51,11 @@ export class MenuController {
   async getItems(
     @Query('categoryId') categoryId?: string,
     @Query('activeOnly') activeOnly?: string,
+    @Query('restaurantId') queryRestId?: string,
+    @CurrentUser() user?: any,
   ) {
-    return this.service.findAllItems(categoryId, activeOnly === 'true');
+    const restaurantId = user?.restaurantId || queryRestId;
+    return this.service.findAllItems(categoryId, activeOnly === 'true', restaurantId);
   }
 
   @Get('items/:id')

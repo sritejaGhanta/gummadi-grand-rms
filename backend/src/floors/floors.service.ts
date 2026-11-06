@@ -13,7 +13,14 @@ export class FloorsService {
     private readonly tableRepo: Repository<RestaurantTable>,
   ) {}
 
-  async findAll() {
+  async findAll(restaurantId?: string) {
+    if (restaurantId) {
+      return this.floorRepo.find({
+        where: { restaurantId },
+        relations: ['tables'],
+        order: { floorNumber: 'ASC', name: 'ASC' },
+      });
+    }
     return this.floorRepo.find({
       relations: ['tables'],
       order: { floorNumber: 'ASC', name: 'ASC' },

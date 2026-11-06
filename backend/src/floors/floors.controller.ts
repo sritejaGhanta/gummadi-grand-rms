@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { FloorsService } from './floors.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../database/entities/user.entity';
 
 @ApiTags('floors')
 @ApiBearerAuth()
@@ -14,8 +16,9 @@ export class FloorsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all restaurant floors' })
-  async getFloors() {
-    return this.service.findAll();
+  async getFloors(@CurrentUser() user?: User, @Query('restaurantId') queryRestId?: string) {
+    const restaurantId = user?.restaurantId || queryRestId;
+    return this.service.findAll(restaurantId);
   }
 
   @Get(':id')
