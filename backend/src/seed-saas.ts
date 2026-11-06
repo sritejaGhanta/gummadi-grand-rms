@@ -27,6 +27,7 @@ import { TenantRestaurant, TenantStatus } from './database/entities/tenant-resta
 import { SubscriptionPlan, PlanCode } from './database/entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionCycle, SubscriptionStatus } from './database/entities/tenant-subscription.entity';
 import { LandingLead } from './database/entities/landing-lead.entity';
+import { StaffAttendance, AttendanceStatus, ShiftType } from './database/entities/staff-attendance.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -61,6 +62,7 @@ const dataSource = new DataSource({
     SubscriptionPlan,
     TenantSubscription,
     LandingLead,
+    StaffAttendance,
   ],
   synchronize: true,
 });
@@ -244,6 +246,44 @@ async function seedSaaS() {
         isActive: true,
       });
       await userRepo.save(u);
+    }
+  }
+
+  // 4b. Seed Sample Attendance Records for Gummadi Staff
+  const attRepo = dataSource.getRepository(StaffAttendance);
+  const today = new Date().toISOString().split('T')[0];
+  const waiterUser = await userRepo.findOne({ where: { username: 'gummadi_waiter' } });
+  const chefUser = await userRepo.findOne({ where: { username: 'gummadi_chef' } });
+
+  if (waiterUser) {
+    let wAtt = await attRepo.findOne({ where: { userId: waiterUser.id, date: today } });
+    if (!wAtt) {
+      wAtt = attRepo.create({
+        userId: waiterUser.id,
+        restaurantId: gummadi.id,
+        date: today,
+        shift: ShiftType.FULL_DAY,
+        status: AttendanceStatus.PRESENT,
+        clockIn: new Date(`${today}T09:30:00`),
+        notes: 'Floor Duty Tables G-01 to G-04',
+      });
+      await attRepo.save(wAtt);
+    }
+  }
+
+  if (chefUser) {
+    let cAtt = await attRepo.findOne({ where: { userId: chefUser.id, date: today } });
+    if (!cAtt) {
+      cAtt = attRepo.create({
+        userId: chefUser.id,
+        restaurantId: gummadi.id,
+        date: today,
+        shift: ShiftType.FULL_DAY,
+        status: AttendanceStatus.PRESENT,
+        clockIn: new Date(`${today}T09:00:00`),
+        notes: 'Kitchen Master Chef Station',
+      });
+      await attRepo.save(cAtt);
     }
   }
 

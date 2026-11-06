@@ -161,3 +161,12 @@ export const superAdminApi = {
   convertLead: (id: string) => apiClient.post(`/super-admin/leads/${id}/convert`),
   submitDemoInquiry: (data: any) => apiClient.post('/super-admin/demo-inquiry', data),
 };
+
+export const attendanceApi = {
+  clockIn: (shift = 'FULL_DAY', notes?: string) => apiClient.post('/attendance/clock-in', { shift, notes }),
+  clockOut: (notes?: string) => apiClient.post('/attendance/clock-out', { notes }),
+  getMyStatus: () => apiClient.get('/attendance/my-status'),
+  getTodayRoster: (restaurantId?: string) => apiClient.get('/attendance/today-roster', { params: { restaurantId } }),
+  getMonthly: (month?: string, restaurantId?: string) => apiClient.get('/attendance/monthly', { params: { month, restaurantId } }),
+  manualMark: (data: any) => apiClient.post('/attendance/manual-mark', data),
+};

@@ -29,6 +29,7 @@ import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { RestaurantOwnerDashboard } from './pages/RestaurantOwnerDashboard';
 import { LandingPage } from './pages/LandingPage';
 import { QrCustomerMenuPage } from './pages/QrCustomerMenuPage';
+import { StaffAttendancePage } from './pages/StaffAttendancePage';
 
 const RoleBasedRedirect: React.FC = () => {
   const { user, isSuperAdmin } = useAuth();
@@ -233,6 +234,14 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedLayout requiredRole={['admin', 'manager']}>
                     <CustomersCrmPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/attendance"
+                element={
+                  <ProtectedLayout>
+                    <StaffAttendancePage />
                   </ProtectedLayout>
                 }
               />

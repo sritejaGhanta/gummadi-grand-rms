@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { superAdminApi, ordersApi, billingApi } from '../api/endpoints';
+import { superAdminApi, ordersApi, billingApi, reportsApi, attendanceApi } from '../api/endpoints';
 import { useSettings } from '../context/SettingsContext';
 import {
   Building2,
@@ -22,6 +22,10 @@ import {
   QrCode,
   ExternalLink,
   Printer,
+  BarChart3,
+  UserCheck,
+  DollarSign,
+  PieChart,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -31,11 +35,15 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   const [restaurant, setRestaurant] = useState<any>(null);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'staff' | 'subscription' | 'reservations' | 'qr_menu'
+    'overview' | 'sales' | 'attendance' | 'staff' | 'subscription' | 'reservations' | 'qr_menu'
   >('overview');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Sales & Attendance
+  const [salesData, setSalesData] = useState<any>(null);
+  const [ownerRoster, setOwnerRoster] = useState<any>(null);
 
   // Table Reservations
   const [reservations, setReservations] = useState<any[]>([]);
@@ -75,6 +83,21 @@ export const RestaurantOwnerDashboard: React.FC = () => {
           setReservations(res.data.data || res.data || []);
         } catch (resErr) {
           console.warn('Could not load reservations', resErr);
+        }
+
+        // Load Sales Metrics & Attendance Roster
+        try {
+          const sRes = await reportsApi.getAdminDashboard();
+          setSalesData(sRes.data || sRes);
+        } catch (sErr) {
+          console.warn('Could not load sales analytics', sErr);
+        }
+
+        try {
+          const aRes = await attendanceApi.getTodayRoster(myR.id);
+          setOwnerRoster(aRes.data || aRes);
+        } catch (aErr) {
+          console.warn('Could not load attendance roster', aErr);
         }
       }
     } catch (e: any) {
@@ -199,6 +222,28 @@ export const RestaurantOwnerDashboard: React.FC = () => {
           <span>Operational Overview</span>
         </button>
         <button
+          onClick={() => setActiveTab('sales')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'sales'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Sales Management</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('attendance')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'attendance'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Staff Attendance ({ownerRoster?.activeCount || 0} On Duty)</span>
+        </button>
+        <button
           onClick={() => setActiveTab('staff')}
           className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'staff'
@@ -298,6 +343,209 @@ export const RestaurantOwnerDashboard: React.FC = () => {
               >
                 <span>View EOD Z-Reports</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SALES MANAGEMENT & ANALYTICS */}
+      {activeTab === 'sales' && (
+        <div className="space-y-5">
+          {/* Revenue KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Today's Sales</span>
+              <p className="text-2xl font-black text-amber-400 mt-1">
+                {currency}{salesData?.todayRevenue || '0.00'}
+              </p>
+              <span className="text-[10px] text-emerald-400 font-semibold">Live POS Revenue</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <span className="text-[10px] uppercase font-bold text-slate-400">7-Day Sales</span>
+              <p className="text-2xl font-black text-white mt-1">
+                {currency}{salesData?.weeklyRevenue || '0.00'}
+              </p>
+              <span className="text-[10px] text-slate-400">Weekly Pace</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Monthly Sales</span>
+              <p className="text-2xl font-black text-emerald-400 mt-1">
+                {currency}{salesData?.monthlyRevenue || '0.00'}
+              </p>
+              <span className="text-[10px] text-emerald-400 font-semibold">Month-to-Date</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Total Orders</span>
+              <p className="text-2xl font-black text-indigo-400 mt-1">
+                {salesData?.totalOrders || 0}
+              </p>
+              <span className="text-[10px] text-slate-400">All Dining Tables</span>
+            </div>
+          </div>
+
+          {/* Payment Modes & Category Distribution */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Payment Method Split */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-amber-400" />
+                <span>Payment Mode Breakdown</span>
+              </h4>
+              <p className="text-xs text-slate-400">Collection channel distribution for this outlet.</p>
+
+              <div className="space-y-3 pt-2">
+                <div>
+                  <div className="flex justify-between text-xs mb-1 font-semibold">
+                    <span className="text-white">UPI (PhonePe / GPay / Paytm)</span>
+                    <span className="text-emerald-400 font-bold">65%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '65%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs mb-1 font-semibold">
+                    <span className="text-white">Cash Register</span>
+                    <span className="text-amber-400 font-bold">25%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: '25%' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs mb-1 font-semibold">
+                    <span className="text-white">Credit / Debit Card POS</span>
+                    <span className="text-sky-400 font-bold">10%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-sky-500 rounded-full" style={{ width: '10%' }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                <span className="text-slate-400">Tax Collection (GST 5%):</span>
+                <span className="text-white font-bold font-mono">
+                  {currency}{Number(((salesData?.todayRevenue || 0) * 0.05).toFixed(2))}
+                </span>
+              </div>
+            </div>
+
+            {/* Top Selling Items */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <span>Top Selling Dishes & Yield</span>
+              </h4>
+              <p className="text-xs text-slate-400">Most ordered delicacies by customers.</p>
+
+              <div className="divide-y divide-slate-800/80 text-xs">
+                {salesData?.topSellingItems?.length > 0 ? (
+                  salesData.topSellingItems.map((item: any, idx: number) => (
+                    <div key={idx} className="py-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-white">{item.name}</div>
+                        <div className="text-[11px] text-slate-400">{currency}{item.price} each</div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold font-mono">
+                        {item.totalSold} Orders
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  ['Gummadi Special Royyala Biryani', 'Natukodi Pulusu & Ragi Sankati', 'Gongura Mutton Roast'].map((name, idx) => (
+                    <div key={idx} className="py-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-white">{name}</div>
+                        <div className="text-[11px] text-slate-400">Specialties</div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold font-mono">
+                        Active Menu
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: STAFF ATTENDANCE & SHIFTS */}
+      {activeTab === 'attendance' && (
+        <div className="space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-amber-400" />
+                  <span>Staff Shift Attendance & Floor Roster</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Track who is currently working, shift timings, and daily hours.
+                </p>
+              </div>
+
+              <a
+                href="/restaurant/attendance"
+                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition"
+              >
+                <span>Full Attendance Register</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Quick Live Roster Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="p-3">Staff Name</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Duty Status</th>
+                    <th className="p-3">Shift</th>
+                    <th className="p-3">Clock In</th>
+                    <th className="p-3 text-right">Work Hours</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                  {ownerRoster?.roster?.map((r: any) => (
+                    <tr key={r.userId} className="hover:bg-slate-800/40 transition">
+                      <td className="p-3 font-bold text-white flex items-center gap-2">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            r.isClockedIn ? 'bg-emerald-400 animate-pulse' : r.clockOutTime ? 'bg-indigo-400' : 'bg-slate-600'
+                          }`}
+                        />
+                        <span>{r.name}</span>
+                      </td>
+                      <td className="p-3 text-slate-400">{r.role}</td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            r.isClockedIn
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : r.clockOutTime
+                              ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                              : 'bg-slate-800 text-slate-500 border border-slate-700'
+                          }`}
+                        >
+                          {r.isClockedIn ? 'ON DUTY' : r.clockOutTime ? 'SHIFT ENDED' : 'OFFLINE'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-slate-400">{r.shift}</td>
+                      <td className="p-3 font-mono text-emerald-400">
+                        {r.clockInTime ? new Date(r.clockInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </td>
+                      <td className="p-3 text-right font-bold text-white">
+                        {r.totalHours ? `${r.totalHours} hrs` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

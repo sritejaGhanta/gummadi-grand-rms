@@ -20,6 +20,7 @@ import {
   Gift,
   Crown,
   Building2,
+  UserCheck,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -104,6 +105,12 @@ export const Sidebar: React.FC = () => {
       show: isAdmin || isManager || isChef,
     },
     // 6. Dedicated Staff Performance & Operations
+    {
+      to: '/attendance',
+      label: 'Staff Attendance & Shifts',
+      icon: UserCheck,
+      show: true,
+    },
     {
       to: '/staff-performance',
       label: 'Staff Daily Performance',
