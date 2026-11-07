@@ -201,4 +201,67 @@ export class SuperAdminController {
   ) {
     return this.service.resetUserPassword(id, password);
   }
+
+  // ==========================================
+  // PRODUCT OWNER: IMPERSONATE & OUTLET CONTROLS
+  // ==========================================
+  @Post('restaurants/:id/impersonate')
+  @ApiOperation({ summary: '1-Click shadow login / impersonate restaurant owner or manager' })
+  async impersonateRestaurant(@Param('id') id: string) {
+    return this.service.impersonateRestaurant(id);
+  }
+
+  @Patch('restaurants/:id/details')
+  @ApiOperation({ summary: 'Update restaurant business details (GSTIN, FSSAI, contacts)' })
+  async updateRestaurantDetails(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.service.updateRestaurantDetails(id, body);
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: B2B INVOICES & FINANCIALS
+  // ==========================================
+  @Get('invoices')
+  @ApiOperation({ summary: 'List all subscription billing invoices across restaurants' })
+  async getInvoices() {
+    return this.service.getSubscriptionInvoices();
+  }
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get SaaS unit economics, city breakdown, and revenue analytics' })
+  async getAnalytics() {
+    return this.service.getAnalyticsBreakdown();
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: SYSTEM HEALTH & MAINTENANCE
+  // ==========================================
+  @Get('diagnostics')
+  @ApiOperation({ summary: 'Real-time server diagnostics, database stats, and uptime' })
+  async getDiagnostics() {
+    return this.service.getSystemDiagnostics();
+  }
+
+  @Post('maintenance-mode')
+  @ApiOperation({ summary: 'Toggle platform-wide maintenance mode' })
+  async toggleMaintenanceMode(@Body() body: { active: boolean; reason?: string }) {
+    return this.service.toggleMaintenanceMode(body);
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: BROADCAST ANNOUNCEMENTS
+  // ==========================================
+  @Get('broadcast')
+  @ApiOperation({ summary: 'Get active global broadcast announcement' })
+  async getBroadcast() {
+    return this.service.getBroadcastAnnouncement();
+  }
+
+  @Post('broadcast')
+  @ApiOperation({ summary: 'Publish or update global broadcast announcement' })
+  async updateBroadcast(@Body() body: { message: string; type: string; active: boolean }) {
+    return this.service.updateBroadcastAnnouncement(body);
+  }
 }

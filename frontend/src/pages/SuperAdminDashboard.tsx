@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { superAdminApi } from '../api/endpoints';
 import { useSettings } from '../context/SettingsContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Building2,
   Users,
@@ -35,10 +36,24 @@ import {
   Check,
   ToggleLeft,
   ToggleRight,
+  Eye,
+  Activity,
+  Server,
+  FileText,
+  Printer,
+  BarChart3,
+  Radio,
+  AlertTriangle,
+  Edit,
+  Power,
+  CheckCircle,
+  Database,
+  Cpu,
 } from 'lucide-react';
 
 export const SuperAdminDashboard: React.FC = () => {
   const { currency } = useSettings();
+  const { impersonate } = useAuth();
 
   const [metrics, setMetrics] = useState<{
     totalTenants: number;
@@ -73,7 +88,18 @@ export const SuperAdminDashboard: React.FC = () => {
   const [platformUsers, setPlatformUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const [userRestFilter, setUserRestFilter] = useState<string>('ALL');
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'platform_users' | 'roles_permissions' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
+  const [activeTab, setActiveTab] = useState<
+    | 'restaurants'
+    | 'platform_users'
+    | 'roles_permissions'
+    | 'analytics'
+    | 'invoices'
+    | 'broadcast'
+    | 'diagnostics'
+    | 'plans'
+    | 'landing_cms'
+    | 'leads'
+  >('restaurants');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -105,6 +131,52 @@ export const SuperAdminDashboard: React.FC = () => {
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [savingRole, setSavingRole] = useState<string | null>(null);
   const [matrixFilterModule, setMatrixFilterModule] = useState<string>('ALL');
+
+  // Product Owner: Analytics State
+  const [analyticsData, setAnalyticsData] = useState<any>({
+    cityDistribution: [],
+    planDistribution: [],
+    totalRevenue: 0,
+    totalGmv: 0,
+    totalOrders: 0,
+    arpu: 0,
+    aov: 0,
+  });
+
+  // Product Owner: Invoices State & Modal
+  const [invoicesList, setInvoicesList] = useState<any[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
+  // Product Owner: Broadcast Announcements State
+  const [broadcastForm, setBroadcastForm] = useState<{
+    message: string;
+    type: 'info' | 'warning' | 'alert';
+    active: boolean;
+  }>({
+    message: 'Welcome to AharPOS Enterprise Suite! High-performance dining & zero-latency KDS active.',
+    type: 'info',
+    active: false,
+  });
+  const [savingBroadcast, setSavingBroadcast] = useState(false);
+
+  // Product Owner: Diagnostics & Maintenance Mode State
+  const [diagnostics, setDiagnostics] = useState<any>(null);
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
+
+  // Product Owner: Edit Restaurant Details Modal
+  const [showEditRestModal, setShowEditRestModal] = useState(false);
+  const [editRestForm, setEditRestForm] = useState<any>({
+    id: '',
+    name: '',
+    cuisine: '',
+    contactPhone: '',
+    contactEmail: '',
+    address: '',
+    city: '',
+    status: '',
+  });
+  const [savingEditRest, setSavingEditRest] = useState(false);
 
   // Landing CMS & Leads State
   const [leads, setLeads] = useState<any[]>([]);
@@ -169,7 +241,7 @@ export const SuperAdminDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [mRes, rRes, pRes, cmsRes, leadsRes, uRes, matrixRes] = await Promise.all([
+      const [mRes, rRes, pRes, cmsRes, leadsRes, uRes, matrixRes, analyticsRes, invRes, diagRes, bcastRes] = await Promise.all([
         superAdminApi.getMetrics(),
         superAdminApi.getRestaurants(),
         superAdminApi.getPlans(),
@@ -177,6 +249,10 @@ export const SuperAdminDashboard: React.FC = () => {
         superAdminApi.getLeads().catch(() => []),
         superAdminApi.getPlatformUsers().catch(() => []),
         superAdminApi.getPermissionMatrix().catch(() => null),
+        superAdminApi.getAnalytics().catch(() => null),
+        superAdminApi.getInvoices().catch(() => []),
+        superAdminApi.getDiagnostics().catch(() => null),
+        superAdminApi.getBroadcast().catch(() => null),
       ]);
       setMetrics(mRes || {});
       setRestaurants(Array.isArray(rRes) ? rRes : []);
@@ -185,11 +261,105 @@ export const SuperAdminDashboard: React.FC = () => {
       setLeads(Array.isArray(leadsRes) ? leadsRes : []);
       setPlatformUsers(Array.isArray(uRes) ? uRes : []);
       if (matrixRes) setMatrixData(matrixRes);
+      if (analyticsRes) setAnalyticsData(analyticsRes);
+      setInvoicesList(Array.isArray(invRes) ? invRes : []);
+      if (diagRes) setDiagnostics(diagRes);
+      if (bcastRes) setBroadcastForm(bcastRes);
     } catch (e: any) {
       setActionError(e.message || 'Failed to load Super Admin data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImpersonate = async (restaurantId: string, restaurantName: string) => {
+    if (
+      !confirm(
+        `Start Support Impersonation for "${restaurantName}"?\nYou will temporarily act as the Restaurant Manager to assist them or inspect their setup. You can exit anytime.`
+      )
+    )
+      return;
+
+    try {
+      const res = await superAdminApi.impersonate(restaurantId);
+      if (res && res.accessToken) {
+        impersonate(res);
+        window.location.href = '/restaurant/manager';
+      }
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to impersonate restaurant');
+    }
+  };
+
+  const handleOpenEditRest = (r: any) => {
+    setEditRestForm({
+      id: r.id,
+      name: r.name,
+      cuisine: r.cuisine || 'Multi-Cuisine',
+      contactPhone: r.contactPhone,
+      contactEmail: r.contactEmail || '',
+      address: r.address || '',
+      city: r.city || 'Hyderabad',
+      status: r.status,
+    });
+    setShowEditRestModal(true);
+  };
+
+  const handleSaveEditRest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingEditRest(true);
+    try {
+      await superAdminApi.updateRestaurantDetails(editRestForm.id, editRestForm);
+      setActionSuccess(`Restaurant details updated successfully for "${editRestForm.name}"!`);
+      setShowEditRestModal(false);
+      loadData();
+      setTimeout(() => setActionSuccess(null), 3000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to update restaurant');
+    } finally {
+      setSavingEditRest(false);
+    }
+  };
+
+  const handleSaveBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingBroadcast(true);
+    try {
+      const res = await superAdminApi.updateBroadcast(broadcastForm);
+      setBroadcastForm(res);
+      setActionSuccess('Platform Broadcast Announcement published across all client screens in real time!');
+      setTimeout(() => setActionSuccess(null), 3500);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to publish broadcast');
+    } finally {
+      setSavingBroadcast(false);
+    }
+  };
+
+  const handleToggleMaintenance = async (active: boolean) => {
+    const reason = active
+      ? prompt('Enter scheduled maintenance reason for restaurants:', 'Scheduled Platform Upgrades (2:00 AM - 4:00 AM)')
+      : '';
+    if (active && reason === null) return;
+    setSavingMaintenance(true);
+    try {
+      const res = await superAdminApi.toggleMaintenanceMode({ active, reason: reason || 'Scheduled Upgrade' });
+      setDiagnostics((prev: any) => ({
+        ...prev,
+        maintenanceMode: res,
+      }));
+      setActionSuccess(active ? 'Platform Emergency Maintenance Mode ENABLED!' : 'Maintenance Mode DISABLED. System operational.');
+      setTimeout(() => setActionSuccess(null), 3500);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to toggle maintenance mode');
+    } finally {
+      setSavingMaintenance(false);
+    }
+  };
+
+  const handleViewInvoice = (inv: any) => {
+    setSelectedInvoice(inv);
+    setShowInvoiceModal(true);
   };
 
   const handleOpenCapabilitiesModal = (r: any) => {
@@ -553,7 +723,7 @@ export const SuperAdminDashboard: React.FC = () => {
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
         <button
           onClick={() => setActiveTab('restaurants')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'restaurants'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -564,7 +734,7 @@ export const SuperAdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('platform_users')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'platform_users'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -575,7 +745,7 @@ export const SuperAdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('roles_permissions')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'roles_permissions'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -585,37 +755,87 @@ export const SuperAdminDashboard: React.FC = () => {
           <span>Roles & Permissions Matrix</span>
         </button>
         <button
+          onClick={() => setActiveTab('analytics')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'analytics'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>SaaS Analytics & Unit Economics</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'invoices'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>B2B Tax Invoices & Billing ({invoicesList.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('broadcast')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'broadcast'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Radio className="w-4 h-4" />
+          <span>Broadcast Ticker</span>
+          {broadcastForm.active && (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('diagnostics')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'diagnostics'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>System Health & Uptime</span>
+          {diagnostics?.maintenanceMode?.active && (
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500 text-white">MAINT</span>
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab('plans')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'plans'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          <span>Subscription Plans & Tiers ({plans.length})</span>
+          <span>Plans ({plans.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('landing_cms')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'landing_cms'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>Landing Website CMS & Pricing</span>
+          <span>Landing CMS</span>
         </button>
         <button
           onClick={() => setActiveTab('leads')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 relative ${
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 relative ${
             activeTab === 'leads'
               ? 'bg-amber-500 text-slate-950 shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
           <PhoneCall className="w-4 h-4" />
-          <span>Demo Inquiries & Leads ({leads.length})</span>
+          <span>Leads ({leads.length})</span>
           {leads.filter((l) => l.status === 'NEW').length > 0 && (
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
           )}
@@ -735,12 +955,28 @@ export const SuperAdminDashboard: React.FC = () => {
 
                       <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
+                          onClick={() => handleImpersonate(r.id, r.name)}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition inline-flex items-center gap-1 shadow-sm"
+                          title="1-Click Support Impersonation: View as Manager"
+                        >
+                          <Eye className="w-3 h-3 text-indigo-400" />
+                          <span>Impersonate</span>
+                        </button>
+                        <button
                           onClick={() => handleOpenCapabilitiesModal(r)}
                           className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 text-xs font-bold transition inline-flex items-center gap-1"
                           title="Configure module capabilities & feature licensing"
                         >
                           <Zap className="w-3 h-3 text-amber-400" />
                           <span>Capabilities</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditRest(r)}
+                          className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition inline-flex items-center gap-1"
+                          title="Edit restaurant business & contact details"
+                        >
+                          <Edit className="w-3 h-3 text-slate-400" />
+                          <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleOpenSubModal(r)}
@@ -1105,6 +1341,484 @@ export const SuperAdminDashboard: React.FC = () => {
                   })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SAAS ANALYTICS & UNIT ECONOMICS */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <BarChart3 className="w-4 h-4" />
+                <span>Executive Telemetry & Financial Modeling</span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-0.5">SaaS Platform Unit Economics</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Key B2B metrics across all restaurant clients, recurring subscriptions, and aggregate order volumes.
+              </p>
+            </div>
+            <button
+              onClick={loadData}
+              className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 inline-flex items-center gap-1.5 transition self-start sm:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh Metrics</span>
+            </button>
+          </div>
+
+          {/* Unit Economics Highlight Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="text-[11px] uppercase font-bold text-slate-400">Total B2B Revenue Collected</div>
+              <div className="text-2xl font-black text-emerald-400 mt-1">
+                {currency}{analyticsData.totalRevenue?.toLocaleString() || 0}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">From active & historical subscriptions</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="text-[11px] uppercase font-bold text-slate-400">Platform GMV (Food Billed)</div>
+              <div className="text-2xl font-black text-blue-400 mt-1">
+                {currency}{analyticsData.totalGmv?.toLocaleString() || 0}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Across {analyticsData.totalOrders || 0} total diner orders</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="text-[11px] uppercase font-bold text-slate-400">ARPU (Per Restaurant)</div>
+              <div className="text-2xl font-black text-amber-400 mt-1">
+                {currency}{analyticsData.arpu?.toLocaleString() || 0}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Average revenue per outlet</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+              <div className="text-[11px] uppercase font-bold text-slate-400">AOV (Avg Order Value)</div>
+              <div className="text-2xl font-black text-indigo-400 mt-1">
+                {currency}{analyticsData.aov?.toLocaleString() || 0}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Average customer bill size</div>
+            </div>
+          </div>
+
+          {/* Charts & Breakdown Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Plan Tier Distribution */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-amber-400" />
+                  <h3 className="font-bold text-white text-sm">Subscription Plan Distribution</h3>
+                </div>
+                <span className="text-xs text-slate-400">{restaurants.length} Total Outlets</span>
+              </div>
+
+              <div className="space-y-3">
+                {analyticsData.planDistribution?.map((p: any) => {
+                  const pct = restaurants.length > 0 ? Math.round((p.count / restaurants.length) * 100) : 0;
+                  return (
+                    <div key={p.plan} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-200">{p.plan}</span>
+                        <span className="text-amber-400 font-mono font-bold">
+                          {p.count} outlets ({pct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* City Geographic Spread */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400" />
+                  <h3 className="font-bold text-white text-sm">Geographic Outlet Presence</h3>
+                </div>
+                <span className="text-xs text-slate-400">{analyticsData.cityDistribution?.length || 0} Cities</span>
+              </div>
+
+              <div className="space-y-3">
+                {analyticsData.cityDistribution?.map((c: any) => {
+                  const pct = restaurants.length > 0 ? Math.round((c.count / restaurants.length) * 100) : 0;
+                  return (
+                    <div key={c.city} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-200">{c.city}</span>
+                        <span className="text-emerald-400 font-mono font-bold">
+                          {c.count} outlets ({pct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: B2B TAX INVOICES & BILLING ENGINE */}
+      {activeTab === 'invoices' && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <FileText className="w-4 h-4" />
+                <span>Subscription Billing Ledger & GST Compliance</span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-0.5">B2B Tax Invoices & Payment Records</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official GST-compliant tax invoices generated for restaurant SaaS subscriptions. Click to view or print.
+              </p>
+            </div>
+            <button
+              onClick={loadData}
+              className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 inline-flex items-center gap-1.5 transition self-start sm:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh Invoices</span>
+            </button>
+          </div>
+
+          <div className="glass-panel rounded-2xl border border-slate-800 overflow-x-auto shadow-2xl">
+            <table className="w-full text-left text-xs sm:text-sm text-slate-300">
+              <thead className="bg-slate-950/90 text-slate-300 border-b border-slate-800 text-[11px] uppercase font-bold text-slate-400">
+                <tr>
+                  <th className="py-3.5 px-4">Invoice #</th>
+                  <th className="py-3.5 px-4">Client Restaurant</th>
+                  <th className="py-3.5 px-4">Plan & Cycle</th>
+                  <th className="py-3.5 px-4 text-right">Amount Paid</th>
+                  <th className="py-3.5 px-4">Payment Method</th>
+                  <th className="py-3.5 px-4">Validity Period</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {invoicesList.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-500 text-xs">
+                      No invoices recorded yet. Record a payment or onboard a restaurant to generate an invoice.
+                    </td>
+                  </tr>
+                ) : (
+                  invoicesList.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-slate-850/40 transition">
+                      <td className="py-3.5 px-4">
+                        <span className="font-mono font-bold text-amber-400">{inv.invoiceNumber}</span>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          {new Date(inv.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white">{inv.restaurantName}</div>
+                        <div className="text-[11px] text-slate-400">{inv.restaurantCity}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-slate-200">{inv.planName}</span>
+                        <div className="text-[10px] text-slate-400 capitalize">{inv.billingCycle}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-black text-white font-mono">
+                        {currency}{inv.amountPaid.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-300">
+                        {inv.paymentMethod}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-slate-400">
+                        {new Date(inv.startDate).toLocaleDateString()} ➔ {new Date(inv.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            inv.status === 'ACTIVE'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          }`}
+                        >
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleViewInvoice(inv)}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition inline-flex items-center gap-1"
+                        >
+                          <FileText className="w-3 h-3 text-indigo-400" />
+                          <span>View Tax Invoice</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: GLOBAL BROADCAST ANNOUNCEMENT */}
+      {activeTab === 'broadcast' && (
+        <div className="space-y-6 max-w-4xl">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+              <Radio className="w-4 h-4" />
+              <span>Real-Time Push Communication</span>
+            </div>
+            <h2 className="text-xl font-black text-white mt-0.5">Platform Broadcast Announcement Ticker</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Publish real-time announcements, scheduled maintenance notices, or feature alerts to all logged-in restaurant managers and staff.
+            </p>
+          </div>
+
+          <form onSubmit={handleSaveBroadcast} className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5 bg-slate-900/60">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <span className="text-sm font-bold text-white">Broadcast Status</span>
+                <p className="text-xs text-slate-400">Toggle whether this announcement is actively visible on client screens.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBroadcastForm({ ...broadcastForm, active: !broadcastForm.active })}
+                className={`px-4 py-2 rounded-xl text-xs font-bold border transition inline-flex items-center gap-2 ${
+                  broadcastForm.active
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                    : 'bg-slate-850 text-slate-500 border-slate-800'
+                }`}
+              >
+                <Power className="w-4 h-4" />
+                <span>{broadcastForm.active ? 'BROADCAST IS ACTIVE' : 'INACTIVE (OFF)'}</span>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Banner Alert Type</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { type: 'info', label: 'Info (Blue)', border: 'border-blue-500/40 bg-blue-500/10 text-blue-300' },
+                  { type: 'warning', label: 'Warning (Amber)', border: 'border-amber-500/40 bg-amber-500/10 text-amber-300' },
+                  { type: 'alert', label: 'Urgent Alert (Rose)', border: 'border-rose-500/40 bg-rose-500/10 text-rose-300' },
+                ].map((t) => (
+                  <button
+                    key={t.type}
+                    type="button"
+                    onClick={() => setBroadcastForm({ ...broadcastForm, type: t.type as any })}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition ${
+                      broadcastForm.type === t.type
+                        ? `${t.border} ring-2 ring-amber-400/30`
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Announcement Message Text *</label>
+              <textarea
+                rows={3}
+                required
+                value={broadcastForm.message}
+                onChange={(e) => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
+                placeholder="e.g. 📢 Scheduled Maintenance: Antigravity AharPOS cloud will undergo maintenance tonight from 2:00 AM to 4:00 AM IST. Offline POS will continue operating normally."
+                className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-500 leading-relaxed"
+              />
+            </div>
+
+            {/* Live Client Preview */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Live Client Screen Preview:</span>
+              <div
+                className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 ${
+                  broadcastForm.type === 'alert'
+                    ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                    : broadcastForm.type === 'warning'
+                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                    : 'bg-blue-500/10 text-blue-300 border-blue-500/30'
+                }`}
+              >
+                <Radio className="w-4 h-4 shrink-0 animate-pulse" />
+                <span className="flex-1">{broadcastForm.message || 'No announcement message entered yet.'}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={savingBroadcast}
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>{savingBroadcast ? 'Publishing...' : 'Publish Broadcast Ticker'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* TAB: SYSTEM HEALTH, DIAGNOSTICS & MAINTENANCE MODE */}
+      {activeTab === 'diagnostics' && (
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <Activity className="w-4 h-4" />
+                <span>Runtime Infrastructure & Hardware Diagnostics</span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-0.5">System Health & Diagnostic Telemetry</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time server telemetry, database connection pool status, and emergency maintenance killswitch.
+              </p>
+            </div>
+            <button
+              onClick={loadData}
+              className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 inline-flex items-center gap-1.5 transition self-start sm:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Run Diagnostic Ping</span>
+            </button>
+          </div>
+
+          {/* Emergency Maintenance Card */}
+          <div
+            className={`p-5 rounded-3xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+              diagnostics?.maintenanceMode?.active
+                ? 'bg-rose-950/40 border-rose-500/50 shadow-xl ring-1 ring-rose-500/30'
+                : 'bg-slate-900/80 border-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  diagnostics?.maintenanceMode?.active
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                }`}
+              >
+                <Power className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-white text-base">
+                    Platform Status:{' '}
+                    {diagnostics?.maintenanceMode?.active ? (
+                      <span className="text-rose-400">MAINTENANCE MODE ACTIVE</span>
+                    ) : (
+                      <span className="text-emerald-400">100% OPERATIONAL</span>
+                    )}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {diagnostics?.maintenanceMode?.active
+                    ? `Reason: ${diagnostics.maintenanceMode.reason || 'Platform Upgrades'}`
+                    : 'All restaurant outlets, table QR menus, POS terminals, and KDS live screens operating with normal latency.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleToggleMaintenance(!diagnostics?.maintenanceMode?.active)}
+              disabled={savingMaintenance}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition border shadow ${
+                diagnostics?.maintenanceMode?.active
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500'
+                  : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-500'
+              }`}
+            >
+              {diagnostics?.maintenanceMode?.active ? 'Deactivate Maintenance Mode' : '⚠️ Trigger Maintenance Mode'}
+            </button>
+          </div>
+
+          {/* Telemetry Diagnostics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Server Runtime */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+              <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                <Server className="w-4 h-4" />
+                <span>Runtime Node Engine</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Continuous Uptime:</span>
+                  <span className="text-white font-mono font-bold">{diagnostics?.serverUptime || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Node Runtime:</span>
+                  <span className="text-white font-mono">{diagnostics?.nodeVersion || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Host Platform:</span>
+                  <span className="text-slate-300 font-mono text-[11px] truncate max-w-[170px]">{diagnostics?.platform || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RAM Memory Footprint */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+              <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                <Cpu className="w-4 h-4" />
+                <span>Memory Allocation</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">RSS Resident Memory:</span>
+                  <span className="text-emerald-400 font-mono font-bold">{diagnostics?.memory?.rssMb || 0} MB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Heap Used:</span>
+                  <span className="text-white font-mono">{diagnostics?.memory?.heapUsedMb || 0} MB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Heap Total:</span>
+                  <span className="text-slate-400 font-mono">{diagnostics?.memory?.heapTotalMb || 0} MB</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Database Engine */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                <Database className="w-4 h-4" />
+                <span>PostgreSQL 16 Engine</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Pool Connectivity:</span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>ONLINE (Ping &lt; 1ms)</span>
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Total Billed Records:</span>
+                  <span className="text-white font-mono">{diagnostics?.database?.totalBills || 0} Bills</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Live WebSockets Clients:</span>
+                  <span className="text-amber-400 font-mono font-bold">
+                    {diagnostics?.realtimeSockets?.activeClients || 0} Connected
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2090,6 +2804,241 @@ export const SuperAdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT RESTAURANT DETAILS MODAL */}
+      {showEditRestModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Edit className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Edit Restaurant Details</h3>
+                  <p className="text-xs text-slate-400">Update outlet branding, cuisine and contact profile</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditRestModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditRest} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1">Restaurant Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editRestForm.name}
+                  onChange={(e) => setEditRestForm({ ...editRestForm, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:border-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Cuisine *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRestForm.cuisine}
+                    onChange={(e) => setEditRestForm({ ...editRestForm, cuisine: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">City / Region *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRestForm.city}
+                    onChange={(e) => setEditRestForm({ ...editRestForm, city: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Contact Phone *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRestForm.contactPhone}
+                    onChange={(e) => setEditRestForm({ ...editRestForm, contactPhone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Contact Email</label>
+                  <input
+                    type="email"
+                    value={editRestForm.contactEmail}
+                    onChange={(e) => setEditRestForm({ ...editRestForm, contactEmail: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Physical Address</label>
+                <input
+                  type="text"
+                  value={editRestForm.address}
+                  onChange={(e) => setEditRestForm({ ...editRestForm, address: e.target.value })}
+                  placeholder="Street address, landmark, PIN code"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRestModal(false)}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditRest}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shadow-md disabled:opacity-50"
+                >
+                  {savingEditRest ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* B2B GST TAX INVOICE PRINTABLE MODAL */}
+      {showInvoiceModal && selectedInvoice && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-6 text-slate-200">
+            {/* Action Bar */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <span>Official B2B Tax Invoice</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition inline-flex items-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Print Invoice</span>
+                </button>
+                <button
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Tax Invoice Paper Box */}
+            <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-xl font-black text-white flex items-center gap-2">
+                    <span>🔥 AharPOS Cloud</span>
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">AharPOS Restaurant Operating System</div>
+                  <div className="text-[11px] text-slate-500">HITEC City, Madhapur, Hyderabad, TS 500081</div>
+                  <div className="text-[11px] font-mono text-amber-400 font-bold mt-1">GSTIN: 36AAAAA0000A1Z5</div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-lg font-black font-mono text-amber-400">{selectedInvoice.invoiceNumber}</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    Invoice Date: {new Date(selectedInvoice.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Cycle: <span className="capitalize font-semibold text-white">{selectedInvoice.billingCycle}</span>
+                  </div>
+                  <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    PAID IN FULL
+                  </span>
+                </div>
+              </div>
+
+              {/* Bill To */}
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Billed To (Client Restaurant):</span>
+                <div className="font-bold text-white text-sm">{selectedInvoice.restaurantName}</div>
+                <div className="text-slate-400 mt-0.5">{selectedInvoice.restaurantAddress}, {selectedInvoice.restaurantCity}</div>
+                <div className="text-slate-400">Phone: {selectedInvoice.restaurantPhone}</div>
+              </div>
+
+              {/* Line Items Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-800 text-slate-400 text-[10px] uppercase font-bold">
+                    <tr>
+                      <th className="py-2 px-2">Description</th>
+                      <th className="py-2 px-2 text-center">HSN/SAC</th>
+                      <th className="py-2 px-2 text-center">Duration</th>
+                      <th className="py-2 px-2 text-right">Taxable Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono">
+                    <tr>
+                      <td className="py-3 px-2 font-sans font-semibold text-white">
+                        {selectedInvoice.planName} SaaS Subscription License
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Full Dine-in POS, KDS Live, Table QR Self-Order & WhatsApp E-Bills
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-center text-slate-300">997331</td>
+                      <td className="py-3 px-2 text-center text-slate-300">
+                        {new Date(selectedInvoice.startDate).toLocaleDateString()} to {new Date(selectedInvoice.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-2 text-right text-white font-bold">
+                        {currency}{Math.round(selectedInvoice.amountPaid / 1.18).toLocaleString()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Tax Calculations */}
+              <div className="flex justify-end pt-2 border-t border-slate-800 text-xs">
+                <div className="w-64 space-y-1.5 font-mono">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Taxable Base:</span>
+                    <span>{currency}{Math.round(selectedInvoice.amountPaid / 1.18).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>CGST (9%):</span>
+                    <span>{currency}{Math.round((selectedInvoice.amountPaid / 1.18) * 0.09).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>SGST (9%):</span>
+                    <span>{currency}{Math.round((selectedInvoice.amountPaid / 1.18) * 0.09).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-white text-base pt-2 border-t border-slate-800">
+                    <span>Total Paid:</span>
+                    <span className="text-emerald-400">{currency}{selectedInvoice.amountPaid.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="text-[10px] text-slate-500 text-center pt-3 border-t border-slate-800/60">
+                Payment Ref: {selectedInvoice.transactionReference} via {selectedInvoice.paymentMethod} • Computer Generated Tax Invoice • No Physical Signature Required
+              </div>
+            </div>
           </div>
         </div>
       )}

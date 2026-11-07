@@ -167,6 +167,15 @@ export const superAdminApi = {
   updateRolePermissions: (roleName: string, permissionKeys: string[]) => apiClient.post('/super-admin/permissions/matrix', { roleName, permissionKeys }),
   toggleUserStatus: (id: string) => apiClient.patch(`/super-admin/users/${id}/status`),
   resetUserPassword: (id: string, password?: string) => apiClient.post(`/super-admin/users/${id}/reset-password`, { password }),
+  // Product Owner Master Controls
+  impersonate: (restaurantId: string) => apiClient.post(`/super-admin/restaurants/${restaurantId}/impersonate`),
+  updateRestaurantDetails: (id: string, data: any) => apiClient.patch(`/super-admin/restaurants/${id}/details`, data),
+  getInvoices: () => apiClient.get('/super-admin/invoices'),
+  getAnalytics: () => apiClient.get('/super-admin/analytics'),
+  getDiagnostics: () => apiClient.get('/super-admin/diagnostics'),
+  toggleMaintenanceMode: (data: { active: boolean; reason?: string }) => apiClient.post('/super-admin/maintenance-mode', data),
+  getBroadcast: () => apiClient.get('/super-admin/broadcast'),
+  updateBroadcast: (data: { message: string; type: string; active: boolean }) => apiClient.post('/super-admin/broadcast', data),
 };
 
 export const attendanceApi = {

@@ -6,7 +6,7 @@ import { UtensilsCrossed, Bell, LogOut, User, Wifi, WifiOff, Menu, X } from 'luc
 import { useNav } from '../context/NavContext';
 
 export const Navbar: React.FC = () => {
-  const { user, isSuperAdmin, logout } = useAuth();
+  const { user, isSuperAdmin, logout, isImpersonating, exitImpersonation } = useAuth();
   const { connected, lastEvent } = useSocket();
   const { restaurantName, logoUrl, settings } = useSettings();
   const { isMobileOpen, toggleMobile } = useNav();
@@ -27,7 +27,24 @@ export const Navbar: React.FC = () => {
     : logoUrl;
 
   return (
-    <header className="h-16 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
+    <>
+      {isImpersonating && (
+        <div className="bg-amber-500 text-slate-950 px-4 py-1.5 text-xs font-black flex items-center justify-between sticky top-0 z-50 shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="text-base">👁️</span>
+            <span>
+              SUPPORT IMPERSONATION ACTIVE: You are logged into <strong>{currentRestaurantName}</strong> as <strong>{user?.name || user?.username}</strong>.
+            </span>
+          </div>
+          <button
+            onClick={exitImpersonation}
+            className="px-3 py-1 rounded-lg bg-slate-950 hover:bg-slate-900 text-amber-400 font-extrabold text-[11px] transition shadow"
+          >
+            Exit Impersonation ➔ Return to HQ
+          </button>
+        </div>
+      )}
+      <header className="h-16 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
       {/* Brand & Hamburger */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Mobile Hamburger Button */}
@@ -150,5 +167,6 @@ export const Navbar: React.FC = () => {
         )}
       </div>
     </header>
+    </>
   );
 };

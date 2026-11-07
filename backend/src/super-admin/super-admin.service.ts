@@ -13,9 +13,14 @@ import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
 import { ApplicationSetting } from '../database/entities/application-setting.entity';
 import { LandingLead } from '../database/entities/landing-lead.entity';
+import { AuthService } from '../auth/auth.service';
+import { EventsGateway } from '../events/events.gateway';
+import * as os from 'os';
 
 @Injectable()
 export class SuperAdminService {
+  private startTime = Date.now();
+
   constructor(
     @InjectRepository(TenantRestaurant)
     private readonly restaurantRepo: Repository<TenantRestaurant>,
@@ -39,6 +44,8 @@ export class SuperAdminService {
     private readonly settingRepo: Repository<ApplicationSetting>,
     @InjectRepository(LandingLead)
     private readonly leadRepo: Repository<LandingLead>,
+    private readonly authService: AuthService,
+    private readonly eventsGateway: EventsGateway,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -662,5 +669,255 @@ export class SuperAdminService {
     user.passwordHash = await bcrypt.hash(pwd, 10);
     await this.userRepo.save(user);
     return { success: true, message: `Password reset to: ${pwd}`, temporaryPassword: pwd };
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: IMPERSONATE / SHADOW ACCESS
+  // ==========================================
+  async impersonateRestaurant(restaurantId: string) {
+    const restaurant = await this.restaurantRepo.findOne({ where: { id: restaurantId } });
+    if (!restaurant) throw new NotFoundException('Restaurant outlet not found');
+
+    // Find an active manager or admin for this restaurant
+    let user = await this.userRepo.findOne({
+      where: { restaurantId, isActive: true },
+      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
+      order: { createdAt: 'ASC' },
+    });
+
+    if (!user) {
+      let managerRole = await this.roleRepo.findOne({ where: { name: 'manager' } });
+      if (!managerRole) managerRole = await this.roleRepo.findOne({ where: { name: 'admin' } });
+      const passwordHash = await bcrypt.hash('impersonate' + Date.now(), 10);
+      user = this.userRepo.create({
+        name: `${restaurant.name} Manager`,
+        username: `${restaurant.slug || 'outlet'}_mgr`,
+        email: restaurant.contactEmail || 'support@aharpos.in',
+        phone: restaurant.contactPhone,
+        passwordHash,
+        roleId: managerRole?.id,
+        restaurantId: restaurant.id,
+        isActive: true,
+      });
+      user = await this.userRepo.save(user);
+      user = await this.userRepo.findOne({
+        where: { id: user.id },
+        relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
+      });
+    }
+
+    const authResult = await this.authService.login(user);
+    return {
+      ...authResult,
+      isImpersonating: true,
+      targetRestaurant: {
+        id: restaurant.id,
+        name: restaurant.name,
+        slug: restaurant.slug,
+        city: restaurant.city,
+      },
+    };
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: UPDATE RESTAURANT DETAILS
+  // ==========================================
+  async updateRestaurantDetails(id: string, dto: any) {
+    const restaurant = await this.restaurantRepo.findOne({ where: { id } });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+    if (dto.name !== undefined) restaurant.name = dto.name;
+    if (dto.cuisine !== undefined) restaurant.cuisine = dto.cuisine;
+    if (dto.contactEmail !== undefined) restaurant.contactEmail = dto.contactEmail;
+    if (dto.contactPhone !== undefined) restaurant.contactPhone = dto.contactPhone;
+    if (dto.address !== undefined) restaurant.address = dto.address;
+    if (dto.city !== undefined) restaurant.city = dto.city;
+    if (dto.status !== undefined) restaurant.status = dto.status;
+    return this.restaurantRepo.save(restaurant);
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: B2B SUBSCRIPTION TAX INVOICES
+  // ==========================================
+  async getSubscriptionInvoices() {
+    const subs = await this.subRepo.find({
+      relations: ['restaurant', 'plan'],
+      order: { createdAt: 'DESC' },
+    });
+    return subs.map((s) => ({
+      id: s.id,
+      invoiceNumber: s.invoiceNumber,
+      restaurantId: s.restaurantId,
+      restaurantName: s.restaurant?.name || 'Restaurant Outlet',
+      restaurantCity: s.restaurant?.city || 'Hyderabad',
+      restaurantPhone: s.restaurant?.contactPhone || '—',
+      restaurantAddress: s.restaurant?.address || 'India',
+      planName: s.plan?.name || 'Pro Plan',
+      planCode: s.plan?.code || 'PRO',
+      amountPaid: Number(s.amountPaid) || 0,
+      billingCycle: s.billingCycle,
+      status: s.status,
+      paymentMethod: s.paymentMethod,
+      transactionReference: s.transactionReference || 'REF-LAN-' + s.id.substring(0, 8).toUpperCase(),
+      startDate: s.startDate,
+      endDate: s.endDate,
+      notes: s.notes,
+      createdAt: s.createdAt,
+    }));
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: SYSTEM DIAGNOSTICS & TELEMETRY
+  // ==========================================
+  async getSystemDiagnostics() {
+    const uptimeSec = Math.floor((Date.now() - this.startTime) / 1000);
+    const days = Math.floor(uptimeSec / 86400);
+    const hours = Math.floor((uptimeSec % 86400) / 3600);
+    const minutes = Math.floor((uptimeSec % 3600) / 60);
+    const seconds = uptimeSec % 60;
+    const uptimeFormatted = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+    const mem = process.memoryUsage();
+    const totalTenants = await this.restaurantRepo.count();
+    const totalUsers = await this.userRepo.count();
+    const totalOrders = await this.orderRepo.count();
+    const totalBills = await this.billRepo.count();
+    const totalSubs = await this.subRepo.count();
+    const activeSockets = this.eventsGateway.getConnectedClientsCount();
+
+    const maintSetting = await this.settingRepo.findOne({ where: { key: 'platform_maintenance_mode' } });
+    let maintenance = { active: false, reason: '' };
+    if (maintSetting) {
+      try {
+        maintenance = JSON.parse(maintSetting.value);
+      } catch {}
+    }
+
+    return {
+      serverUptime: uptimeFormatted,
+      uptimeSeconds: uptimeSec,
+      nodeVersion: process.version,
+      platform: `${os.type()} ${os.release()} (${os.arch()})`,
+      memory: {
+        rssMb: Math.round(mem.rss / 1024 / 1024),
+        heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
+      },
+      database: {
+        connected: true,
+        databaseType: 'PostgreSQL 16 (rms_postgres)',
+        totalTenants,
+        totalUsers,
+        totalOrders,
+        totalBills,
+        totalSubscriptions: totalSubs,
+      },
+      realtimeSockets: {
+        activeClients: activeSockets,
+        gatewayStatus: 'ONLINE (Port 3000)',
+      },
+      maintenanceMode: maintenance,
+    };
+  }
+
+  async toggleMaintenanceMode(dto: { active: boolean; reason?: string }) {
+    let setting = await this.settingRepo.findOne({ where: { key: 'platform_maintenance_mode' } });
+    if (!setting) {
+      setting = this.settingRepo.create({
+        key: 'platform_maintenance_mode',
+        category: 'system',
+        description: 'Emergency Platform Maintenance Mode Switch',
+        value: JSON.stringify(dto),
+      });
+    } else {
+      setting.value = JSON.stringify(dto);
+    }
+    await this.settingRepo.save(setting);
+    this.eventsGateway.notifyPlatformBroadcast({
+      type: dto.active ? 'alert' : 'info',
+      message: dto.active
+        ? `⚠️ Platform Maintenance Active: ${dto.reason || 'System Upgrades underway'}`
+        : 'Platform Maintenance has concluded.',
+      active: dto.active,
+    });
+    return dto;
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: GLOBAL BROADCAST ANNOUNCEMENTS
+  // ==========================================
+  async getBroadcastAnnouncement() {
+    const setting = await this.settingRepo.findOne({ where: { key: 'platform_broadcast_announcement' } });
+    if (!setting) {
+      return {
+        message: 'Welcome to AharPOS Enterprise Suite! Real-time sync and zero-latency KDS active.',
+        type: 'info',
+        active: false,
+      };
+    }
+    try {
+      return JSON.parse(setting.value);
+    } catch {
+      return { message: setting.value, type: 'info', active: true };
+    }
+  }
+
+  async updateBroadcastAnnouncement(dto: { message: string; type: string; active: boolean }) {
+    let setting = await this.settingRepo.findOne({ where: { key: 'platform_broadcast_announcement' } });
+    if (!setting) {
+      setting = this.settingRepo.create({
+        key: 'platform_broadcast_announcement',
+        category: 'system',
+        description: 'Global Restaurant Broadcast Announcement Ticker',
+        value: JSON.stringify(dto),
+      });
+    } else {
+      setting.value = JSON.stringify(dto);
+    }
+    await this.settingRepo.save(setting);
+    this.eventsGateway.notifyPlatformBroadcast(dto);
+    return dto;
+  }
+
+  // ==========================================
+  // PRODUCT OWNER: SAAS UNIT ECONOMICS & ANALYTICS
+  // ==========================================
+  async getAnalyticsBreakdown() {
+    const allTenants = await this.restaurantRepo.find();
+    const allSubs = await this.subRepo.find({ relations: ['plan'] });
+    const plans = await this.planRepo.find();
+    const planMapById = new Map(plans.map((p) => [p.id, p.name]));
+
+    const cityMap: Record<string, number> = {};
+    for (const t of allTenants) {
+      const city = t.city || 'Other';
+      cityMap[city] = (cityMap[city] || 0) + 1;
+    }
+
+    const planCountMap: Record<string, number> = {};
+    for (const t of allTenants) {
+      const p = (t.planId ? planMapById.get(t.planId) : null) || 'Trial (Free)';
+      planCountMap[p] = (planCountMap[p] || 0) + 1;
+    }
+
+    const totalRevenue = allSubs.reduce((sum, s) => sum + (Number(s.amountPaid) || 0), 0);
+    const totalOrders = await this.orderRepo.count();
+    const bills = await this.billRepo.find({ select: ['grandTotal'] });
+    const totalGmv = bills.reduce((sum, b) => sum + (Number(b.grandTotal) || 0), 0);
+
+    const arpu = allTenants.length > 0 ? Math.round(totalRevenue / allTenants.length) : 0;
+    const aov = totalOrders > 0 ? Math.round(totalGmv / totalOrders) : 0;
+
+    return {
+      cityDistribution: Object.entries(cityMap).map(([city, count]) => ({ city, count })),
+      planDistribution: Object.entries(planCountMap).map(([plan, count]) => ({ plan, count })),
+      totalRevenue,
+      totalGmv,
+      totalOrders,
+      arpu,
+      aov,
+      totalTenants: allTenants.length,
+      activeTenants: allTenants.filter((t) => t.status === TenantStatus.ACTIVE).length,
+      trialTenants: allTenants.filter((t) => t.status === TenantStatus.TRIAL).length,
+    };
   }
 }

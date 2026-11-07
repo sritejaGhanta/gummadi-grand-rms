@@ -80,4 +80,18 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   notifySettingsUpdated(settings: any) {
     this.server.emit('settings:updated', settings);
   }
+
+  notifyPlatformBroadcast(broadcast: any) {
+    if (this.server) {
+      this.server.emit('platform:broadcast', broadcast);
+    }
+  }
+
+  getConnectedClientsCount(): number {
+    try {
+      return (this.server?.engine as any)?.clientsCount || 0;
+    } catch {
+      return 0;
+    }
+  }
 }

@@ -13,9 +13,11 @@ import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
 import { ApplicationSetting } from '../database/entities/application-setting.entity';
 import { LandingLead } from '../database/entities/landing-lead.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([
       TenantRestaurant,
       SubscriptionPlan,

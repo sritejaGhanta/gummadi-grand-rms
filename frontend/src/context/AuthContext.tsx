@@ -21,6 +21,9 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   hasPermission: (permissionKey: string) => boolean;
+  impersonate: (data: { accessToken: string; user: any }) => void;
+  exitImpersonation: () => void;
+  isImpersonating: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
@@ -37,7 +40,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null;
   });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('rms_token'));
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(() => {
+    return !!localStorage.getItem('rms_impersonator_token');
+  });
   const [loading, setLoading] = useState(false);
+
+  const impersonate = (data: { accessToken: string; user: any }) => {
+    if (!token || !user) return;
+    localStorage.setItem('rms_impersonator_token', token);
+    localStorage.setItem('rms_impersonator_user', JSON.stringify(user));
+    localStorage.setItem('rms_token', data.accessToken);
+    localStorage.setItem('rms_user', JSON.stringify(data.user));
+    setToken(data.accessToken);
+    setUser(data.user);
+    setIsImpersonating(true);
+  };
+
+  const exitImpersonation = () => {
+    const origToken = localStorage.getItem('rms_impersonator_token');
+    const origUser = localStorage.getItem('rms_impersonator_user');
+    if (origToken && origUser) {
+      localStorage.setItem('rms_token', origToken);
+      localStorage.setItem('rms_user', origUser);
+      localStorage.removeItem('rms_impersonator_token');
+      localStorage.removeItem('rms_impersonator_user');
+      setToken(origToken);
+      setUser(JSON.parse(origUser));
+      setIsImpersonating(false);
+      window.location.href = '/restaurant/super-admin';
+    }
+  };
 
   const login = async (credentials: { username: string; password: string }): Promise<User> => {
     setLoading(true);
@@ -107,6 +139,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         refreshProfile,
         hasPermission,
+        impersonate,
+        exitImpersonation,
+        isImpersonating,
         isSuperAdmin,
         isAdmin,
         isManager,
