@@ -311,9 +311,10 @@ export const SuperAdminDashboard: React.FC = () => {
 
     try {
       const res = await superAdminApi.impersonate(restaurantId);
-      if (res && res.accessToken) {
-        impersonate(res);
-        window.location.href = '/restaurant/manager';
+      const token = res.accessToken || res.access_token;
+      if (res && token) {
+        impersonate({ accessToken: token, user: res.user });
+        window.location.href = '/restaurant/owner-dashboard';
       }
     } catch (err: any) {
       setActionError(err.message || 'Failed to impersonate restaurant');
