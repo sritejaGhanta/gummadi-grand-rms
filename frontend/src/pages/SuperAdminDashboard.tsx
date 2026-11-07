@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { superAdminApi } from '../api/endpoints';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -88,18 +89,46 @@ export const SuperAdminDashboard: React.FC = () => {
   const [platformUsers, setPlatformUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const [userRestFilter, setUserRestFilter] = useState<string>('ALL');
-  const [activeTab, setActiveTab] = useState<
-    | 'restaurants'
-    | 'platform_users'
-    | 'roles_permissions'
-    | 'analytics'
-    | 'invoices'
-    | 'broadcast'
-    | 'diagnostics'
-    | 'plans'
-    | 'landing_cms'
-    | 'leads'
-  >('restaurants');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = [
+    'restaurants',
+    'platform_users',
+    'roles_permissions',
+    'analytics',
+    'invoices',
+    'broadcast',
+    'diagnostics',
+    'plans',
+    'landing_cms',
+    'leads',
+  ];
+  const urlTab = searchParams.get('tab');
+  const initialTab = (urlTab && validTabs.includes(urlTab))
+    ? (urlTab as
+        | 'restaurants'
+        | 'platform_users'
+        | 'roles_permissions'
+        | 'analytics'
+        | 'invoices'
+        | 'broadcast'
+        | 'diagnostics'
+        | 'plans'
+        | 'landing_cms'
+        | 'leads')
+    : 'restaurants';
+
+  const [activeTab, setActiveTabState] = useState<typeof initialTab>(initialTab);
+
+  useEffect(() => {
+    if (urlTab && validTabs.includes(urlTab) && urlTab !== activeTab) {
+      setActiveTabState(urlTab as any);
+    }
+  }, [urlTab]);
+
+  const setActiveTab = (tab: typeof initialTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);

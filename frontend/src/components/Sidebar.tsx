@@ -21,6 +21,12 @@ import {
   Crown,
   Building2,
   UserCheck,
+  BarChart3,
+  FileText,
+  Radio,
+  CreditCard,
+  Globe,
+  PhoneCall,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -163,12 +169,110 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  const renderNavLinks = () => (
-    <div className="p-3.5 space-y-1">
-      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
-        <span className={isSuperAdmin ? 'text-amber-400 font-extrabold flex items-center gap-1.5' : ''}>
-          {isSuperAdmin ? '⚡ AharPOS Platform' : 'Navigation'}
-        </span>
+  const searchParams = new URLSearchParams(location.search);
+  const currentTab = searchParams.get('tab') || 'restaurants';
+
+  const superAdminNav = [
+    {
+      group: 'Tenants & Access',
+      items: [
+        {
+          tab: 'restaurants',
+          to: '/super-admin?tab=restaurants',
+          label: 'Restaurants Directory',
+          icon: Building2,
+          badge: '5',
+        },
+        {
+          tab: 'platform_users',
+          to: '/super-admin?tab=platform_users',
+          label: 'Staff & Managers',
+          icon: Users,
+          badge: '12',
+        },
+        {
+          tab: 'roles_permissions',
+          to: '/super-admin?tab=roles_permissions',
+          label: 'Roles & Permissions Matrix',
+          icon: ShieldCheck,
+        },
+      ],
+    },
+    {
+      group: 'Finance & Subscriptions',
+      items: [
+        {
+          tab: 'analytics',
+          to: '/super-admin?tab=analytics',
+          label: 'SaaS Analytics & Economics',
+          icon: BarChart3,
+        },
+        {
+          tab: 'invoices',
+          to: '/super-admin?tab=invoices',
+          label: 'B2B Tax Invoices & Billing',
+          icon: FileText,
+          badge: '5',
+        },
+        {
+          tab: 'plans',
+          to: '/super-admin?tab=plans',
+          label: 'Subscription Plans & Tiers',
+          icon: CreditCard,
+          badge: '5',
+        },
+      ],
+    },
+    {
+      group: 'Operations & Health',
+      items: [
+        {
+          tab: 'broadcast',
+          to: '/super-admin?tab=broadcast',
+          label: 'Broadcast Ticker',
+          icon: Radio,
+        },
+        {
+          tab: 'diagnostics',
+          to: '/super-admin?tab=diagnostics',
+          label: 'System Health & Uptime',
+          icon: Activity,
+        },
+      ],
+    },
+    {
+      group: 'Marketing & Sales',
+      items: [
+        {
+          tab: 'landing_cms',
+          to: '/super-admin?tab=landing_cms',
+          label: 'Landing Website CMS',
+          icon: Globe,
+        },
+        {
+          tab: 'leads',
+          to: '/super-admin?tab=leads',
+          label: 'Demo Inquiries & Leads',
+          icon: PhoneCall,
+          badge: '7',
+          badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30',
+        },
+      ],
+    },
+  ];
+
+  const renderSuperAdminNav = () => (
+    <div className="p-3.5 space-y-4">
+      <div className="flex items-center justify-between px-3">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs border border-amber-500/30">
+            🔥
+          </div>
+          <div>
+            <div className="text-xs font-black text-white tracking-wide">AharPOS SaaS HQ</div>
+            <div className="text-[9px] uppercase font-bold text-amber-400">Master Control</div>
+          </div>
+        </div>
         <button
           onClick={closeMobile}
           className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white"
@@ -177,31 +281,93 @@ export const Sidebar: React.FC = () => {
           <X className="w-4 h-4" />
         </button>
       </div>
-      {links
-        .filter((link) => link.show)
-        .map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end
-              onClick={closeMobile}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+
+      {superAdminNav.map((sec) => (
+        <div key={sec.group} className="space-y-1">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pt-1">
+            {sec.group}
+          </div>
+          {sec.items.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname.includes('/super-admin') && currentTab === item.tab;
+
+            return (
+              <NavLink
+                key={item.tab}
+                to={item.to}
+                onClick={closeMobile}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
-                }`
-              }
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{item.label}</span>
-            </NavLink>
-          );
-        })}
+                }`}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-md ${
+                      isActive
+                        ? 'bg-slate-950 text-amber-400'
+                        : item.badgeColor || 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
+
+  const renderNavLinks = () => {
+    if (isSuperAdmin) {
+      return renderSuperAdminNav();
+    }
+
+    return (
+      <div className="p-3.5 space-y-1">
+        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
+          <span>Navigation</span>
+          <button
+            onClick={closeMobile}
+            className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white"
+            aria-label="Close navigation"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {links
+          .filter((link) => link.show)
+          .map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
+      </div>
+    );
+  };
 
   return (
     <>
