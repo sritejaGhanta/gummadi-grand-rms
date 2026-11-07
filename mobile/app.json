@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Gummadi Grand RMS",
-    "slug": "rms-restaurant-mobile",
+    "name": "AharPOS RMS",
+    "slug": "aharpos-rms-mobile",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

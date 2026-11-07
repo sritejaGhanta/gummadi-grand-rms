@@ -121,29 +121,56 @@ const ProtectedLayout: React.FC<{
   );
 };
 
+const AHARPOS_FAVICON = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23f59e0b%22/><text y=%22.75em%22 x=%2250%25%22 font-size=%2260%22 text-anchor=%22middle%22>🔥</text></svg>";
+
+const setFavicon = (url: string) => {
+  let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.getElementsByTagName('head')[0].appendChild(link);
+  }
+  link.href = url;
+};
+
 const RouteTitleManager: React.FC = () => {
   const location = useLocation();
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { restaurantName, settings } = useSettings();
 
   useEffect(() => {
     const isSuper = isSuperAdmin || location.pathname.includes('/super-admin');
+    const isPublic = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/login';
+    const isQr = location.pathname.startsWith('/qr') || location.pathname.startsWith('/menu');
+
     if (isSuper) {
       document.title = 'AharPOS — Super Administrator Master Panel';
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (link) {
-        link.href = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23f59e0b%22/><text y=%22.75em%22 x=%2250%25%22 font-size=%2260%22 text-anchor=%22middle%22>🔥</text></svg>";
+      setFavicon(AHARPOS_FAVICON);
+    } else if (isPublic) {
+      if (location.pathname === '/login') {
+        document.title = 'AharPOS — Staff & Owner Login';
+      } else {
+        document.title = 'AharPOS — The Operating System for Fast-Growing Restaurants';
       }
-    } else if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/landing') {
-      document.title = 'AharPOS — The Operating System for Restaurants';
+      setFavicon(AHARPOS_FAVICON);
+    } else if (isQr) {
+      document.title = `Digital Contactless Menu • ${restaurantName || 'Restaurant'} • AharPOS`;
+      if (settings?.restaurant_favicon_url) {
+        setFavicon(settings.restaurant_favicon_url);
+      } else {
+        setFavicon(AHARPOS_FAVICON);
+      }
     } else {
-      document.title = `${restaurantName || 'Gummadi Grand'} • AharPOS`;
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (link && settings?.restaurant_favicon_url) {
-        link.href = settings.restaurant_favicon_url;
+      const tenantName = (user as any)?.restaurant?.name || restaurantName || 'Restaurant Outlet';
+      document.title = `${tenantName} • AharPOS`;
+      const tenantFavicon = (user as any)?.restaurant?.brandLogo || settings?.restaurant_favicon_url;
+      if (tenantFavicon) {
+        setFavicon(tenantFavicon);
+      } else {
+        setFavicon(AHARPOS_FAVICON);
       }
     }
-  }, [location.pathname, isSuperAdmin, restaurantName, settings]);
+  }, [location.pathname, isSuperAdmin, user, restaurantName, settings]);
 
   return null;
 };
