@@ -160,4 +160,45 @@ export class SuperAdminController {
   async convertLead(@Param('id') id: string) {
     return this.service.convertLeadToTenant(id);
   }
+
+  // ==========================================
+  // CAPABILITIES & PERMISSION MATRIX
+  // ==========================================
+  @Patch('restaurants/:id/capabilities')
+  @ApiOperation({ summary: 'Update licensed capabilities for a restaurant' })
+  async updateCapabilities(
+    @Param('id') id: string,
+    @Body() capabilities: any,
+  ) {
+    return this.service.updateRestaurantCapabilities(id, capabilities);
+  }
+
+  @Get('permissions/matrix')
+  @ApiOperation({ summary: 'Get full roles & permissions matrix' })
+  async getPermissionMatrix() {
+    return this.service.getPermissionMatrix();
+  }
+
+  @Post('permissions/matrix')
+  @ApiOperation({ summary: 'Update role permissions for a role' })
+  async updateRolePermissions(
+    @Body() body: { roleName: string; permissionKeys: string[] },
+  ) {
+    return this.service.updateRolePermissions(body.roleName, body.permissionKeys);
+  }
+
+  @Patch('users/:id/status')
+  @ApiOperation({ summary: 'Toggle user active/inactive status' })
+  async toggleUserStatus(@Param('id') id: string) {
+    return this.service.toggleUserStatus(id);
+  }
+
+  @Post('users/:id/reset-password')
+  @ApiOperation({ summary: 'Reset a user password' })
+  async resetUserPassword(
+    @Param('id') id: string,
+    @Body('password') password?: string,
+  ) {
+    return this.service.resetUserPassword(id, password);
+  }
 }

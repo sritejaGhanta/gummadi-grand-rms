@@ -161,6 +161,12 @@ export const superAdminApi = {
   updateLeadStatus: (id: string, data: { status: string; notes?: string }) => apiClient.patch(`/super-admin/leads/${id}/status`, data),
   convertLead: (id: string) => apiClient.post(`/super-admin/leads/${id}/convert`),
   submitDemoInquiry: (data: any) => apiClient.post('/super-admin/demo-inquiry', data),
+  // Capabilities & Permissions Matrix Controls
+  updateCapabilities: (restaurantId: string, capabilities: any) => apiClient.patch(`/super-admin/restaurants/${restaurantId}/capabilities`, capabilities),
+  getPermissionMatrix: () => apiClient.get('/super-admin/permissions/matrix'),
+  updateRolePermissions: (roleName: string, permissionKeys: string[]) => apiClient.post('/super-admin/permissions/matrix', { roleName, permissionKeys }),
+  toggleUserStatus: (id: string) => apiClient.patch(`/super-admin/users/${id}/status`),
+  resetUserPassword: (id: string, password?: string) => apiClient.post(`/super-admin/users/${id}/reset-password`, { password }),
 };
 
 export const attendanceApi = {

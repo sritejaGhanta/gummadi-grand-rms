@@ -28,6 +28,13 @@ import {
   MessageSquare,
   Clock,
   ArrowUpRight,
+  ShieldCheck,
+  Zap,
+  Sliders,
+  KeyRound,
+  Check,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 
 export const SuperAdminDashboard: React.FC = () => {
@@ -66,11 +73,38 @@ export const SuperAdminDashboard: React.FC = () => {
   const [platformUsers, setPlatformUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const [userRestFilter, setUserRestFilter] = useState<string>('ALL');
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'platform_users' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'platform_users' | 'roles_permissions' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Restaurant Capabilities & Module Licensing Modal
+  const [showCapabilitiesModal, setShowCapabilitiesModal] = useState(false);
+  const [capabilitiesRestaurant, setCapabilitiesRestaurant] = useState<any>(null);
+  const [capabilitiesForm, setCapabilitiesForm] = useState({
+    posEnabled: true,
+    kdsEnabled: true,
+    qrOrderEnabled: true,
+    tableSharingEnabled: true,
+    inventoryEnabled: true,
+    attendanceEnabled: true,
+    dayCloseEnabled: true,
+    reservationsEnabled: true,
+    whatsappBillsEnabled: true,
+    discountEnabled: true,
+  });
+  const [savingCapabilities, setSavingCapabilities] = useState(false);
+
+  // Roles & Permissions Master Matrix State
+  const [matrixData, setMatrixData] = useState<{
+    roles: any[];
+    permissions: any[];
+    matrix: Record<string, string[]>;
+  }>({ roles: [], permissions: [], matrix: {} });
+  const [loadingMatrix, setLoadingMatrix] = useState(false);
+  const [savingRole, setSavingRole] = useState<string | null>(null);
+  const [matrixFilterModule, setMatrixFilterModule] = useState<string>('ALL');
 
   // Landing CMS & Leads State
   const [leads, setLeads] = useState<any[]>([]);
@@ -135,13 +169,14 @@ export const SuperAdminDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [mRes, rRes, pRes, cmsRes, leadsRes, uRes] = await Promise.all([
+      const [mRes, rRes, pRes, cmsRes, leadsRes, uRes, matrixRes] = await Promise.all([
         superAdminApi.getMetrics(),
         superAdminApi.getRestaurants(),
         superAdminApi.getPlans(),
         superAdminApi.getLandingCms().catch(() => null),
         superAdminApi.getLeads().catch(() => []),
         superAdminApi.getPlatformUsers().catch(() => []),
+        superAdminApi.getPermissionMatrix().catch(() => null),
       ]);
       setMetrics(mRes || {});
       setRestaurants(Array.isArray(rRes) ? rRes : []);
@@ -149,10 +184,101 @@ export const SuperAdminDashboard: React.FC = () => {
       if (cmsRes) setLandingCmsForm(cmsRes);
       setLeads(Array.isArray(leadsRes) ? leadsRes : []);
       setPlatformUsers(Array.isArray(uRes) ? uRes : []);
+      if (matrixRes) setMatrixData(matrixRes);
     } catch (e: any) {
       setActionError(e.message || 'Failed to load Super Admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenCapabilitiesModal = (r: any) => {
+    setCapabilitiesRestaurant(r);
+    setCapabilitiesForm({
+      posEnabled: r.capabilities?.posEnabled ?? true,
+      kdsEnabled: r.capabilities?.kdsEnabled ?? true,
+      qrOrderEnabled: r.capabilities?.qrOrderEnabled ?? true,
+      tableSharingEnabled: r.capabilities?.tableSharingEnabled ?? true,
+      inventoryEnabled: r.capabilities?.inventoryEnabled ?? true,
+      attendanceEnabled: r.capabilities?.attendanceEnabled ?? true,
+      dayCloseEnabled: r.capabilities?.dayCloseEnabled ?? true,
+      reservationsEnabled: r.capabilities?.reservationsEnabled ?? true,
+      whatsappBillsEnabled: r.capabilities?.whatsappBillsEnabled ?? true,
+      discountEnabled: r.capabilities?.discountEnabled ?? true,
+    });
+    setShowCapabilitiesModal(true);
+  };
+
+  const handleSaveCapabilities = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!capabilitiesRestaurant) return;
+    setSavingCapabilities(true);
+    try {
+      await superAdminApi.updateCapabilities(capabilitiesRestaurant.id, capabilitiesForm);
+      setActionSuccess(`Capabilities updated successfully for ${capabilitiesRestaurant.name}!`);
+      setShowCapabilitiesModal(false);
+      loadData();
+      setTimeout(() => setActionSuccess(null), 3500);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to update capabilities');
+    } finally {
+      setSavingCapabilities(false);
+    }
+  };
+
+  const handleTogglePermission = (roleName: string, permKey: string) => {
+    setMatrixData((prev) => {
+      const currentPerms = prev.matrix[roleName] || [];
+      const has = currentPerms.includes(permKey);
+      const nextPerms = has
+        ? currentPerms.filter((k) => k !== permKey)
+        : [...currentPerms, permKey];
+      return {
+        ...prev,
+        matrix: {
+          ...prev.matrix,
+          [roleName]: nextPerms,
+        },
+      };
+    });
+  };
+
+  const handleSaveRolePermissions = async (roleName: string) => {
+    try {
+      setSavingRole(roleName);
+      const perms = matrixData.matrix[roleName] || [];
+      await superAdminApi.updateRolePermissions(roleName, perms);
+      setActionSuccess(`Permissions updated successfully for role "${roleName}"!`);
+      setTimeout(() => setActionSuccess(null), 3500);
+    } catch (err: any) {
+      setActionError(err.message || `Failed to save permissions for ${roleName}`);
+    } finally {
+      setSavingRole(null);
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string) => {
+    try {
+      await superAdminApi.toggleUserStatus(userId);
+      setActionSuccess('User status updated successfully');
+      loadData();
+      setTimeout(() => setActionSuccess(null), 3000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to toggle user status');
+    }
+  };
+
+  const handleResetUserPassword = async (userId: string, username: string) => {
+    const defaultNewPass = `AharPOS@${Math.floor(100 + Math.random() * 900)}`;
+    const newPass = prompt(`Reset password for @${username}. Enter new password:`, defaultNewPass);
+    if (!newPass) return;
+    try {
+      await superAdminApi.resetUserPassword(userId, newPass);
+      alert(`Password reset successfully for @${username}!\nNew Temporary Password: ${newPass}`);
+      setActionSuccess(`Password reset for @${username}`);
+      setTimeout(() => setActionSuccess(null), 3000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to reset password');
     }
   };
 
@@ -448,6 +574,17 @@ export const SuperAdminDashboard: React.FC = () => {
           <span>Staff & Managers ({platformUsers.length})</span>
         </button>
         <button
+          onClick={() => setActiveTab('roles_permissions')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'roles_permissions'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Roles & Permissions Matrix</span>
+        </button>
+        <button
           onClick={() => setActiveTab('plans')}
           className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
             activeTab === 'plans'
@@ -598,6 +735,14 @@ export const SuperAdminDashboard: React.FC = () => {
 
                       <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
+                          onClick={() => handleOpenCapabilitiesModal(r)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 text-xs font-bold transition inline-flex items-center gap-1"
+                          title="Configure module capabilities & feature licensing"
+                        >
+                          <Zap className="w-3 h-3 text-amber-400" />
+                          <span>Capabilities</span>
+                        </button>
+                        <button
                           onClick={() => handleOpenSubModal(r)}
                           className="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition"
                           title="Record subscription payment / renew plan"
@@ -733,7 +878,8 @@ export const SuperAdminDashboard: React.FC = () => {
                   <th className="py-3 px-4">Assigned Client Restaurant</th>
                   <th className="py-3 px-4">Contact Info</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Last Login</th>
+                  <th className="py-3 px-4 text-center">Last Login</th>
+                  <th className="py-3 px-4 text-right">Actions & Controls</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -816,9 +962,144 @@ export const SuperAdminDashboard: React.FC = () => {
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 text-right text-xs text-slate-400 font-mono">
+                        <td className="py-3.5 px-4 text-center text-xs text-slate-400 font-mono">
                           {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}
                         </td>
+
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+                          <button
+                            onClick={() => handleToggleUserStatus(u.id)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition ${
+                              u.isActive
+                                ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            }`}
+                            title={u.isActive ? 'Disable User Login' : 'Enable User Login'}
+                          >
+                            {u.isActive ? 'Disable' : 'Enable'}
+                          </button>
+                          <button
+                            onClick={() => handleResetUserPassword(u.id, u.username)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition inline-flex items-center gap-1"
+                            title="Reset User Password"
+                          >
+                            <KeyRound className="w-3 h-3 text-amber-400" />
+                            <span>Reset Pwd</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1C: ROLES & PERMISSIONS MASTER MATRIX */}
+      {activeTab === 'roles_permissions' && (
+        <div className="space-y-4">
+          {/* Header Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Security Governance & Access Control</span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-0.5">Roles & Permissions Master Matrix</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Grant or restrict operational capabilities for each platform role. Click checkboxes to toggle and save per role.
+              </p>
+            </div>
+
+            {/* Filter by Module */}
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-semibold text-slate-400">Module Filter:</label>
+              <select
+                value={matrixFilterModule}
+                onChange={(e) => setMatrixFilterModule(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-semibold text-amber-400 focus:outline-none"
+              >
+                <option value="ALL">All Modules ({matrixData.permissions.length})</option>
+                {Array.from(new Set(matrixData.permissions.map((p) => p.module))).map((m) => (
+                  <option key={m} value={m}>
+                    {m.toUpperCase()} ({matrixData.permissions.filter((p) => p.module === m).length})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Master Matrix Table */}
+          <div className="glass-panel rounded-2xl border border-slate-800 overflow-x-auto shadow-2xl">
+            <table className="w-full text-left text-xs sm:text-sm text-slate-300">
+              <thead className="bg-slate-950/90 text-slate-300 border-b border-slate-800">
+                <tr>
+                  <th className="py-4 px-4 min-w-[280px]">
+                    <span className="text-[11px] uppercase font-bold text-slate-400">Permission Action / Capability</span>
+                  </th>
+                  <th className="py-4 px-3 text-center min-w-[110px]">
+                    <span className="text-[11px] uppercase font-bold text-slate-400">Module</span>
+                  </th>
+                  {matrixData.roles.map((r) => {
+                    const isSaving = savingRole === r.name;
+                    return (
+                      <th key={r.id} className="py-4 px-3 text-center min-w-[140px] border-l border-slate-800/80 bg-slate-950/40">
+                        <div className="font-bold text-white text-xs capitalize">{r.displayName || r.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono mb-2">@{r.name}</div>
+                        <button
+                          onClick={() => handleSaveRolePermissions(r.name)}
+                          disabled={isSaving}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <Save className="w-3 h-3" />
+                          <span>{isSaving ? 'Saving...' : 'Save Role'}</span>
+                        </button>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {matrixData.permissions
+                  .filter((p) => matrixFilterModule === 'ALL' || p.module === matrixFilterModule)
+                  .map((p) => {
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-850/40 transition">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{p.description}</div>
+                          <div className="text-[11px] text-amber-400 font-mono">{p.key}</div>
+                        </td>
+
+                        <td className="py-3 px-3 text-center">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-slate-800 text-indigo-300 border border-slate-700">
+                            {p.module}
+                          </span>
+                        </td>
+
+                        {matrixData.roles.map((r) => {
+                          const rolePerms = matrixData.matrix[r.name] || [];
+                          const isGranted = rolePerms.includes(p.key);
+                          const isSuper = r.name === 'superadmin';
+
+                          return (
+                            <td key={r.id} className="py-3 px-3 text-center border-l border-slate-800/60">
+                              <button
+                                type="button"
+                                disabled={isSuper}
+                                onClick={() => handleTogglePermission(r.name, p.key)}
+                                className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition border ${
+                                  isGranted
+                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30 shadow-sm'
+                                    : 'bg-slate-900 text-slate-600 border-slate-800 hover:border-slate-700 hover:text-slate-400'
+                                } ${isSuper ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer'}`}
+                                title={isSuper ? 'Super Admin retains sovereign access' : isGranted ? 'Click to revoke' : 'Click to grant'}
+                              >
+                                {isGranted ? <Check className="w-4 h-4 stroke-[3]" /> : <span className="w-2 h-2 rounded-full bg-slate-700"></span>}
+                              </button>
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
@@ -1655,6 +1936,159 @@ export const SuperAdminDashboard: React.FC = () => {
               >
                 Create Staff Account
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CAPABILITIES & MODULE LICENSING MODAL */}
+      {showCapabilitiesModal && capabilitiesRestaurant && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <span>Module Capabilities & Feature Licensing</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Target Outlet: <span className="text-amber-400 font-bold">{capabilitiesRestaurant.name}</span> ({capabilitiesRestaurant.city})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCapabilitiesModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCapabilities} className="space-y-4">
+              <p className="text-xs text-slate-300">
+                Toggle modules to immediately grant or revoke operational feature access for this restaurant outlet.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+                {[
+                  {
+                    key: 'posEnabled',
+                    name: 'POS & Dine-in Billing',
+                    desc: 'Table order management, billing cashier, thermal receipt printer & KOT tickets.',
+                    icon: '🧾',
+                  },
+                  {
+                    key: 'kdsEnabled',
+                    name: 'Kitchen Display (Live KDS)',
+                    desc: 'Live chef cooking screen, real-time prep timers, sound alerts & order bump bar.',
+                    icon: '👨‍🍳',
+                  },
+                  {
+                    key: 'qrOrderEnabled',
+                    name: 'Contactless QR Self-Order',
+                    desc: 'Guest table scan QR code to browse interactive menu and self-order instantly.',
+                    icon: '📱',
+                  },
+                  {
+                    key: 'tableSharingEnabled',
+                    name: 'Multi-Guest Table Sharing',
+                    desc: 'Independent ordering & separate checks for multiple guests at the same table.',
+                    icon: '👥',
+                  },
+                  {
+                    key: 'inventoryEnabled',
+                    name: 'Inventory & Recipe Tracking',
+                    desc: 'Raw ingredient tracking, automatic menu item yield deductions & low stock alerts.',
+                    icon: '📦',
+                  },
+                  {
+                    key: 'attendanceEnabled',
+                    name: 'Staff Shift Attendance',
+                    desc: 'Staff shift clock-in/out, face photo capture, daily attendance roster & payroll.',
+                    icon: '⏱️',
+                  },
+                  {
+                    key: 'dayCloseEnabled',
+                    name: 'Day-End Cash Reconciliation',
+                    desc: 'Cash drawer tally (EOD), cash in hand balancing & daily closing revenue report.',
+                    icon: '🔒',
+                  },
+                  {
+                    key: 'reservationsEnabled',
+                    name: 'Advance Table Reservations',
+                    desc: 'Advance guest table bookings, guest party sizes, contact phone & reserved slots.',
+                    icon: '📅',
+                  },
+                  {
+                    key: 'whatsappBillsEnabled',
+                    name: 'WhatsApp Digital E-Bills',
+                    desc: 'Direct paperless invoice delivery via WhatsApp API straight to customer phone.',
+                    icon: '💬',
+                  },
+                  {
+                    key: 'discountEnabled',
+                    name: 'Manager Bill Discounts',
+                    desc: 'Allow restaurant cashier/manager to apply flat rupee or percentage bill discounts.',
+                    icon: '🏷️',
+                  },
+                ].map((item) => {
+                  const isChecked = (capabilitiesForm as any)[item.key];
+                  return (
+                    <div
+                      key={item.key}
+                      onClick={() =>
+                        setCapabilitiesForm({
+                          ...capabilitiesForm,
+                          [item.key]: !isChecked,
+                        })
+                      }
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition flex items-start gap-3 ${
+                        isChecked
+                          ? 'bg-amber-500/10 border-amber-500/40 hover:bg-amber-500/15'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-60'
+                      }`}
+                    >
+                      <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-white truncate">{item.name}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                              isChecked
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                            }`}
+                          >
+                            {isChecked ? 'ENABLED' : 'DISABLED'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCapabilitiesModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCapabilities}
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shadow-amber-500/20 disabled:opacity-50 inline-flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingCapabilities ? 'Saving...' : 'Save Capabilities'}</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

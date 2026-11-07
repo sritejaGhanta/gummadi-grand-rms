@@ -70,6 +70,20 @@ export class TenantRestaurant {
   @Column({ type: 'timestamp', nullable: true })
   subscriptionEndsAt: Date;
 
+  @Column({ type: 'jsonb', nullable: true })
+  capabilities: {
+    posEnabled: boolean;
+    kdsEnabled: boolean;
+    qrOrderEnabled: boolean;
+    tableSharingEnabled: boolean;
+    inventoryEnabled: boolean;
+    attendanceEnabled: boolean;
+    dayCloseEnabled: boolean;
+    reservationsEnabled: boolean;
+    whatsappBillsEnabled: boolean;
+    discountEnabled: boolean;
+  };
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -7,6 +7,8 @@ import { SubscriptionPlan, PlanCode } from '../database/entities/subscription-pl
 import { TenantSubscription, SubscriptionCycle, SubscriptionStatus } from '../database/entities/tenant-subscription.entity';
 import { User } from '../database/entities/user.entity';
 import { Role } from '../database/entities/role.entity';
+import { Permission } from '../database/entities/permission.entity';
+import { RolePermission } from '../database/entities/role-permission.entity';
 import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
 import { ApplicationSetting } from '../database/entities/application-setting.entity';
@@ -25,6 +27,10 @@ export class SuperAdminService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Role)
     private readonly roleRepo: Repository<Role>,
+    @InjectRepository(Permission)
+    private readonly permissionRepo: Repository<Permission>,
+    @InjectRepository(RolePermission)
+    private readonly rolePermissionRepo: Repository<RolePermission>,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(Bill)
@@ -574,5 +580,87 @@ export class SuperAdminService {
     await this.leadRepo.save(lead);
 
     return { lead, ...onboardResult };
+  }
+
+  // ==========================================
+  // RESTAURANT CAPABILITIES & FEATURE LICENSING
+  // ==========================================
+  async updateRestaurantCapabilities(restaurantId: string, capabilities: any) {
+    const restaurant = await this.restaurantRepo.findOne({ where: { id: restaurantId } });
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
+    restaurant.capabilities = {
+      ...(restaurant.capabilities || {}),
+      ...capabilities,
+    };
+    return this.restaurantRepo.save(restaurant);
+  }
+
+  // ==========================================
+  // ROLES & PERMISSIONS MASTER MATRIX
+  // ==========================================
+  async getPermissionMatrix() {
+    const roles = await this.roleRepo.find({ order: { name: 'ASC' } });
+    const permissions = await this.permissionRepo.find({ order: { module: 'ASC', key: 'ASC' } });
+    const rolePermissions = await this.rolePermissionRepo.find({ relations: ['permission', 'role'] });
+
+    const matrix: Record<string, string[]> = {};
+    for (const r of roles) {
+      matrix[r.name] = [];
+    }
+    for (const rp of rolePermissions) {
+      if (rp.role?.name && rp.permission?.key) {
+        if (!matrix[rp.role.name]) matrix[rp.role.name] = [];
+        matrix[rp.role.name].push(rp.permission.key);
+      }
+    }
+
+    return {
+      roles,
+      permissions,
+      matrix,
+    };
+  }
+
+  async updateRolePermissions(roleName: string, permissionKeys: string[]) {
+    const role = await this.roleRepo.findOne({ where: { name: roleName } });
+    if (!role) throw new NotFoundException(`Role ${roleName} not found`);
+
+    const permissions = await this.permissionRepo.find();
+    const targetPerms = permissions.filter((p) => permissionKeys.includes(p.key));
+
+    // Remove existing role permissions for this role
+    await this.rolePermissionRepo.delete({ roleId: role.id });
+
+    // Insert new role permissions
+    if (targetPerms.length > 0) {
+      const newEntries = targetPerms.map((p) =>
+        this.rolePermissionRepo.create({
+          roleId: role.id,
+          permissionId: p.id,
+        }),
+      );
+      await this.rolePermissionRepo.save(newEntries);
+    }
+
+    return this.getPermissionMatrix();
+  }
+
+  // ==========================================
+  // CROSS-TENANT USER DIRECTORY CONTROLS
+  // ==========================================
+  async toggleUserStatus(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    user.isActive = !user.isActive;
+    return this.userRepo.save(user);
+  }
+
+  async resetUserPassword(userId: string, newPassword?: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    const pwd = newPassword || 'AharPOS@123';
+    user.passwordHash = await bcrypt.hash(pwd, 10);
+    await this.userRepo.save(user);
+    return { success: true, message: `Password reset to: ${pwd}`, temporaryPassword: pwd };
   }
 }

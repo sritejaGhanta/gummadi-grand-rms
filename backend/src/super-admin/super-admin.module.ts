@@ -7,6 +7,8 @@ import { SubscriptionPlan } from '../database/entities/subscription-plan.entity'
 import { TenantSubscription } from '../database/entities/tenant-subscription.entity';
 import { User } from '../database/entities/user.entity';
 import { Role } from '../database/entities/role.entity';
+import { Permission } from '../database/entities/permission.entity';
+import { RolePermission } from '../database/entities/role-permission.entity';
 import { Order } from '../database/entities/order.entity';
 import { Bill } from '../database/entities/bill.entity';
 import { ApplicationSetting } from '../database/entities/application-setting.entity';
@@ -20,6 +22,8 @@ import { LandingLead } from '../database/entities/landing-lead.entity';
       TenantSubscription,
       User,
       Role,
+      Permission,
+      RolePermission,
       Order,
       Bill,
       ApplicationSetting,
