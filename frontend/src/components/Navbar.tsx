@@ -17,7 +17,14 @@ export const Navbar: React.FC = () => {
     setImgError(false);
   }, [logoUrl]);
 
-  const saasBrandName = settings?.landing_brand_name || 'AharPOS';
+  const userRestaurantName = (user as any)?.restaurant?.name;
+  const currentRestaurantName = isSuperAdmin
+    ? 'AharPOS'
+    : userRestaurantName || restaurantName;
+
+  const currentLogo = !isSuperAdmin && (user as any)?.restaurant?.brandLogo
+    ? (user as any)?.restaurant?.brandLogo
+    : logoUrl;
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
@@ -36,10 +43,10 @@ export const Navbar: React.FC = () => {
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/30 shrink-0">
             <span className="text-xl">🔥</span>
           </div>
-        ) : logoUrl && !imgError ? (
+        ) : currentLogo && !imgError ? (
           <img
-            src={logoUrl}
-            alt={restaurantName}
+            src={currentLogo}
+            alt={currentRestaurantName}
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain bg-slate-900 shrink-0 border border-slate-700/80 shadow-lg shadow-amber-500/10 p-0.5"
             onError={() => setImgError(true)}
           />
@@ -51,16 +58,20 @@ export const Navbar: React.FC = () => {
         <div>
           <h1 className="font-bold text-base sm:text-lg leading-tight tracking-tight text-white flex items-center gap-1.5 sm:gap-2">
             <span className={`truncate max-w-[140px] sm:max-w-none ${isSuperAdmin ? 'text-amber-400 font-extrabold tracking-wide text-lg' : ''}`}>
-              {isSuperAdmin ? 'AharPOS' : restaurantName}
+              {currentRestaurantName}
             </span>
-            {isSuperAdmin && (
+            {isSuperAdmin ? (
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider hidden sm:inline-block">
                 Super Admin HQ
+              </span>
+            ) : (
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700 uppercase tracking-wider hidden sm:inline-block">
+                AharPOS Outlet
               </span>
             )}
           </h1>
           <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block">
-            {isSuperAdmin ? 'Operating System for Fast-Growing Restaurants' : 'Intranet Operating System'}
+            {isSuperAdmin ? 'Operating System for Fast-Growing Restaurants' : 'Restaurant Operations • Powered by AharPOS'}
           </p>
         </div>
       </div>

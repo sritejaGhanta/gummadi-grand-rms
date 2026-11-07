@@ -33,6 +33,8 @@ export const Sidebar: React.FC = () => {
     closeMobile();
   }, [location.pathname]);
 
+  const isRestaurantStaff = !isSuperAdmin;
+
   const links = [
     // 0. Super Admin SaaS Platform (Super Admin only)
     {
@@ -46,118 +48,118 @@ export const Sidebar: React.FC = () => {
       to: '/owner-dashboard',
       label: 'Restaurant Control Room',
       icon: Building2,
-      show: isSuperAdmin || isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
     // 1. Admin Executive Dashboard (Admin only)
     {
       to: '/admin',
       label: 'Admin Overview',
       icon: LayoutDashboard,
-      show: isSuperAdmin || isAdmin,
+      show: isRestaurantStaff && isAdmin,
     },
     // 2. Manager Operations & Cashier Billing (Topmost #1 for Manager)
     {
       to: '/manager',
       label: 'Manager Operations & Cashier Billing',
       icon: Receipt,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
     // 3. Staff / Waiter POS
     {
       to: '/pos',
       label: 'Staff POS & Orders',
       icon: Smartphone,
-      show: isAdmin || isManager || isStaff,
+      show: isRestaurantStaff && (isAdmin || isManager || isStaff),
     },
     // 4. Kitchen Display System
     {
       to: '/kitchen',
       label: 'Kitchen KDS (Live)',
       icon: ChefHat,
-      show: isAdmin || isManager || isChef,
+      show: isRestaurantStaff && (isAdmin || isManager || isChef),
     },
     // 5. Inventory & Stock Tracking
     {
       to: '/inventory',
       label: 'Inventory & Stock',
       icon: Boxes,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
     // 6. End-of-Day (EOD) Reconciliation
     {
       to: '/day-close',
       label: 'Day-End Cash Close (EOD)',
       icon: Lock,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
     // 7. Customers & Loyalty CRM
     {
       to: '/customers',
       label: 'Customer CRM & Loyalty',
       icon: Gift,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
     // 8. Dedicated Chef Preparation & Cooking History (Separate Menu Option)
     {
       to: '/kitchen/history',
       label: 'Chef Cooking History',
       icon: History,
-      show: isAdmin || isManager || isChef,
+      show: isRestaurantStaff && (isAdmin || isManager || isChef),
     },
-    // 6. Dedicated Staff Performance & Operations
+    // 9. Dedicated Staff Performance & Operations
     {
       to: '/attendance',
       label: 'Staff Attendance & Shifts',
       icon: UserCheck,
-      show: true,
+      show: isRestaurantStaff,
     },
     {
       to: '/staff-performance',
       label: 'Staff Daily Performance',
       icon: Activity,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
-    // 7. Menu Management
+    // 10. Menu Management
     {
       to: '/menu-manage',
       label: 'Menu & Pricing',
       icon: Utensils,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
-    // 8. Floors & Tables Management (Strictly Admin & Manager only)
+    // 11. Floors & Tables Management (Strictly Admin & Manager only)
     {
       to: '/floors-manage',
       label: 'Floors & Tables',
       icon: Layers,
-      show: isAdmin || isManager,
+      show: isRestaurantStaff && (isAdmin || isManager),
     },
-    // 9. Dedicated Users Component (Strictly Admin only)
+    // 12. Dedicated Users Component (Strictly Admin only)
     {
       to: '/users',
       label: 'Users & Telemetry',
       icon: Users,
-      show: isAdmin,
+      show: isRestaurantStaff && isAdmin,
     },
-    // 10. Role Permissions (Strictly Admin only)
+    // 13. Role Permissions (Strictly Admin only)
     {
       to: '/roles-manage',
       label: 'Roles & Permissions',
       icon: ShieldCheck,
-      show: isAdmin,
+      show: isRestaurantStaff && isAdmin,
     },
-    // 11. Activity / Audit Logs (Strictly Admin only)
+    // 14. Activity / Audit Logs (Strictly Admin only)
     {
       to: '/audit-logs',
       label: 'System Audit Logs',
       icon: History,
-      show: isAdmin,
+      show: isRestaurantStaff && isAdmin,
     },
-    // 12. Settings & Branding (Strictly Admin only)
+    // 15. Settings & Branding (Strictly Admin only)
     {
       to: '/settings',
       label: 'Settings & Branding',
       icon: Settings,
-      show: isAdmin,
+      show: isRestaurantStaff && isAdmin,
     },
   ];
 
