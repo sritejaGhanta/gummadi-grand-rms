@@ -146,6 +146,7 @@ export const logsApi = {
 
 export const superAdminApi = {
   getMetrics: () => apiClient.get('/super-admin/metrics'),
+  getPlatformUsers: () => apiClient.get('/super-admin/platform-users'),
   getRestaurants: () => apiClient.get('/super-admin/restaurants'),
   createRestaurant: (data: any) => apiClient.post('/super-admin/restaurants', data),
   updateStatus: (id: string, status: string) => apiClient.patch(`/super-admin/restaurants/${id}/status`, { status }),

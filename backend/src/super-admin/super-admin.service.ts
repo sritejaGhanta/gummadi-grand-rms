@@ -65,6 +65,18 @@ export class SuperAdminService {
 
     const gmv = parseFloat(totalSalesRaw?.sum || '0');
 
+    // Platform User & Staff Breakdown
+    const totalUsers = await this.userRepo.count();
+    const managerRole = await this.roleRepo.findOne({ where: { name: 'manager' } });
+    const staffRole = await this.roleRepo.findOne({ where: { name: 'staff' } });
+    const chefRole = await this.roleRepo.findOne({ where: { name: 'chef' } });
+    const adminRole = await this.roleRepo.findOne({ where: { name: 'admin' } });
+
+    const totalManagers = managerRole ? await this.userRepo.count({ where: { roleId: managerRole.id } }) : 0;
+    const totalStaff = staffRole ? await this.userRepo.count({ where: { roleId: staffRole.id } }) : 0;
+    const totalChefs = chefRole ? await this.userRepo.count({ where: { roleId: chefRole.id } }) : 0;
+    const totalAdmins = adminRole ? await this.userRepo.count({ where: { roleId: adminRole.id } }) : 0;
+
     return {
       totalTenants,
       activeTenants,
@@ -73,13 +85,49 @@ export class SuperAdminService {
       arr: Math.round(mrr * 12),
       totalOrders,
       gmv: Math.round(gmv),
+      totalUsers,
+      totalManagers,
+      totalStaff,
+      totalChefs,
+      totalAdmins,
     };
+  }
+
+  async getAllPlatformUsers() {
+    const users = await this.userRepo.find({
+      relations: ['role'],
+      order: { createdAt: 'DESC' },
+    });
+
+    const restaurants = await this.restaurantRepo.find();
+    const restMap = new Map(restaurants.map((r) => [r.id, r]));
+
+    return users.map((u) => {
+      const rest = u.restaurantId ? restMap.get(u.restaurantId) : null;
+      return {
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        email: u.email,
+        phone: u.phone,
+        isActive: u.isActive,
+        roleName: u.role?.name || 'user',
+        roleDisplayName: u.role?.displayName || u.role?.name || 'Staff',
+        restaurantId: u.restaurantId,
+        restaurantName: rest?.name || (u.role?.name === 'superadmin' ? 'AharPOS Cloud HQ' : 'Standalone'),
+        restaurantCity: rest?.city || 'HQ',
+        lastLoginAt: u.lastLoginAt,
+        createdAt: u.createdAt,
+      };
+    });
   }
 
   async getAllRestaurants() {
     const list = await this.restaurantRepo.find({
       order: { createdAt: 'DESC' },
     });
+
+    const users = await this.userRepo.find({ relations: ['role'] });
 
     // Populate plan name, staff count, order count for each
     const enriched = await Promise.all(
@@ -90,7 +138,12 @@ export class SuperAdminService {
           if (p) planName = p.name;
         }
 
-        const staffCount = await this.userRepo.count({ where: { restaurantId: r.id } });
+        const restUsers = users.filter((u) => u.restaurantId === r.id);
+        const managers = restUsers.filter((u) => u.role?.name === 'manager');
+        const waiters = restUsers.filter((u) => u.role?.name === 'staff');
+        const chefs = restUsers.filter((u) => u.role?.name === 'chef');
+
+        const staffCount = restUsers.length;
         const ordersCount = await this.orderRepo.count({ where: { restaurantId: r.id } });
 
         const daysLeft = r.subscriptionEndsAt
@@ -103,6 +156,10 @@ export class SuperAdminService {
           ...r,
           planName,
           staffCount,
+          managersCount: managers.length,
+          waitersCount: waiters.length,
+          chefsCount: chefs.length,
+          ownerUser: managers[0]?.name || restUsers[0]?.name || 'Not Assigned',
           ordersCount,
           daysLeft,
         };

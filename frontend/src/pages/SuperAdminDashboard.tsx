@@ -37,6 +37,11 @@ export const SuperAdminDashboard: React.FC = () => {
     totalTenants: number;
     activeTenants: number;
     trialTenants: number;
+    totalUsers: number;
+    totalManagers: number;
+    totalStaff: number;
+    totalChefs: number;
+    totalAdmins: number;
     mrr: number;
     arr: number;
     totalOrders: number;
@@ -45,6 +50,11 @@ export const SuperAdminDashboard: React.FC = () => {
     totalTenants: 0,
     activeTenants: 0,
     trialTenants: 0,
+    totalUsers: 0,
+    totalManagers: 0,
+    totalStaff: 0,
+    totalChefs: 0,
+    totalAdmins: 0,
     mrr: 0,
     arr: 0,
     totalOrders: 0,
@@ -53,7 +63,10 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
+  const [platformUsers, setPlatformUsers] = useState<any[]>([]);
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
+  const [userRestFilter, setUserRestFilter] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'platform_users' | 'plans' | 'landing_cms' | 'leads'>('restaurants');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -122,18 +135,20 @@ export const SuperAdminDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [mRes, rRes, pRes, cmsRes, leadsRes] = await Promise.all([
+      const [mRes, rRes, pRes, cmsRes, leadsRes, uRes] = await Promise.all([
         superAdminApi.getMetrics(),
         superAdminApi.getRestaurants(),
         superAdminApi.getPlans(),
         superAdminApi.getLandingCms().catch(() => null),
         superAdminApi.getLeads().catch(() => []),
+        superAdminApi.getPlatformUsers().catch(() => []),
       ]);
       setMetrics(mRes || {});
       setRestaurants(Array.isArray(rRes) ? rRes : []);
       setPlans(Array.isArray(pRes) ? pRes : []);
       if (cmsRes) setLandingCmsForm(cmsRes);
       setLeads(Array.isArray(leadsRes) ? leadsRes : []);
+      setPlatformUsers(Array.isArray(uRes) ? uRes : []);
     } catch (e: any) {
       setActionError(e.message || 'Failed to load Super Admin data');
     } finally {
@@ -347,6 +362,38 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {/* Global SaaS Telemetry Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Tenants */}
+        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+            <Building2 className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Client Restaurants</div>
+            <div className="text-xl sm:text-2xl font-black text-white">
+              {metrics.totalTenants}
+            </div>
+            <div className="text-[10px] text-amber-400 font-medium">
+              {metrics.activeTenants} Active • {metrics.trialTenants} Trial
+            </div>
+          </div>
+        </div>
+
+        {/* Total Platform Staff & Users */}
+        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <Users className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Staff & Managers</div>
+            <div className="text-xl sm:text-2xl font-black text-white">
+              {metrics.totalUsers} Accounts
+            </div>
+            <div className="text-[10px] text-indigo-300 font-medium">
+              {metrics.totalManagers} Mgrs • {metrics.totalChefs} Chefs • {metrics.totalStaff} Waiters
+            </div>
+          </div>
+        </div>
+
         {/* MRR Card */}
         <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
@@ -361,36 +408,6 @@ export const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Total Tenants */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Restaurants</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
-              {metrics.totalTenants}
-            </div>
-            <div className="text-[10px] text-amber-400 font-medium">
-              {metrics.activeTenants} Active • {metrics.trialTenants} Trial
-            </div>
-          </div>
-        </div>
-
-        {/* Total Platform Orders */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
-            <Layers className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Platform Orders</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
-              {metrics.totalOrders}
-            </div>
-            <div className="text-[10px] text-indigo-300 font-medium">Processed across outlets</div>
-          </div>
-        </div>
-
         {/* Platform Gross Volume */}
         <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
@@ -401,7 +418,7 @@ export const SuperAdminDashboard: React.FC = () => {
             <div className="text-xl sm:text-2xl font-black text-white">
               {currency}{metrics.gmv.toLocaleString()}
             </div>
-            <div className="text-[10px] text-blue-400 font-medium">Total billed by clients</div>
+            <div className="text-[10px] text-blue-400 font-medium">{metrics.totalOrders} total orders processed</div>
           </div>
         </div>
       </div>
@@ -418,6 +435,17 @@ export const SuperAdminDashboard: React.FC = () => {
         >
           <Building2 className="w-4 h-4" />
           <span>Restaurants Directory ({restaurants.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('platform_users')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+            activeTab === 'platform_users'
+              ? 'bg-amber-500 text-slate-950 shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Staff & Managers ({platformUsers.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('plans')}
@@ -542,8 +570,16 @@ export const SuperAdminDashboard: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-xs">
-                        <div className="font-bold text-white">{r.staffCount || 0} Staff members</div>
-                        <div className="text-[11px] text-slate-400">{r.ordersCount || 0} orders processed</div>
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-indigo-400" />
+                          <span>{r.staffCount || 0} Staff Accounts</span>
+                        </div>
+                        <div className="text-[11px] text-amber-400 font-medium mt-0.5">
+                          Head: {r.ownerUser || 'Assigned'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          {r.managersCount || 0} Mgr • {r.chefsCount || 0} Chef • {r.waitersCount || 0} Waiter
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -589,6 +625,203 @@ export const SuperAdminDashboard: React.FC = () => {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 1B: PLATFORM USERS & STAFF DIRECTORY (SITE ADMIN VIEW) */}
+      {activeTab === 'platform_users' && (
+        <div className="space-y-4">
+          {/* Quick Role Breakdown Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-400">Total Accounts</div>
+                <div className="text-lg font-black text-white">{platformUsers.length}</div>
+              </div>
+              <Users className="w-6 h-6 text-indigo-400 opacity-60" />
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-amber-400">Owners & Managers</div>
+                <div className="text-lg font-black text-amber-400">
+                  {platformUsers.filter((u) => u.roleName === 'manager').length}
+                </div>
+              </div>
+              <Building2 className="w-6 h-6 text-amber-400 opacity-60" />
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-rose-400">Head / Line Chefs</div>
+                <div className="text-lg font-black text-rose-400">
+                  {platformUsers.filter((u) => u.roleName === 'chef').length}
+                </div>
+              </div>
+              <span className="text-xl">👨‍🍳</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-emerald-400">Service Waiters</div>
+                <div className="text-lg font-black text-emerald-400">
+                  {platformUsers.filter((u) => u.roleName === 'staff').length}
+                </div>
+              </div>
+              <span className="text-xl">🛎️</span>
+            </div>
+          </div>
+
+          {/* Filters & Search */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search user, phone, role..."
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <select
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-amber-500"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="manager">Restaurant Owners & Managers</option>
+                <option value="chef">Chefs</option>
+                <option value="staff">Waiters / Service Staff</option>
+                <option value="superadmin">Super Administrators</option>
+              </select>
+
+              {/* Restaurant Filter */}
+              <select
+                value={userRestFilter}
+                onChange={(e) => setUserRestFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 focus:outline-none focus:border-amber-500 max-w-[200px] truncate"
+              >
+                <option value="ALL">All Client Restaurants</option>
+                {restaurants.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={loadData}
+              className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition self-start sm:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh Users</span>
+            </button>
+          </div>
+
+          {/* Platform Users Table */}
+          <div className="glass-panel rounded-2xl border border-slate-800 overflow-x-auto shadow-xl">
+            <table className="w-full text-left text-xs sm:text-sm text-slate-300">
+              <thead className="bg-slate-950/80 text-[11px] uppercase font-bold text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th className="py-3 px-4">User & Login</th>
+                  <th className="py-3 px-4">Platform Role</th>
+                  <th className="py-3 px-4">Assigned Client Restaurant</th>
+                  <th className="py-3 px-4">Contact Info</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Last Login</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {platformUsers
+                  .filter((u) => {
+                    const q = searchQuery.toLowerCase();
+                    const matchesQuery =
+                      !q ||
+                      u.name?.toLowerCase().includes(q) ||
+                      u.username?.toLowerCase().includes(q) ||
+                      u.phone?.toLowerCase().includes(q) ||
+                      u.restaurantName?.toLowerCase().includes(q);
+
+                    const matchesRole = userRoleFilter === 'ALL' || u.roleName === userRoleFilter;
+                    const matchesRest = userRestFilter === 'ALL' || u.restaurantId === userRestFilter;
+
+                    return matchesQuery && matchesRole && matchesRest;
+                  })
+                  .map((u) => {
+                    const isMgr = u.roleName === 'manager';
+                    const isChef = u.roleName === 'chef';
+                    const isStaff = u.roleName === 'staff';
+                    const isSuper = u.roleName === 'superadmin';
+
+                    return (
+                      <tr key={u.id} className="hover:bg-slate-850/50 transition">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-white text-sm">{u.name || u.username}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">@{u.username}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
+                              isSuper
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                : isMgr
+                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                : isChef
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            }`}
+                          >
+                            <span>{isSuper ? '👑' : isMgr ? '🏢' : isChef ? '👨‍🍳' : '🛎️'}</span>
+                            <span>{u.roleDisplayName}</span>
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-200">{u.restaurantName}</div>
+                          <div className="text-[11px] text-slate-500">{u.restaurantCity}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4 space-y-0.5 text-xs">
+                          {u.phone ? (
+                            <div className="flex items-center gap-1 text-slate-300">
+                              <Phone className="w-3 h-3 text-slate-500" />
+                              <span>{u.phone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 text-[11px]">—</span>
+                          )}
+                          {u.email && (
+                            <div className="flex items-center gap-1 text-slate-400 text-[11px]">
+                              <Mail className="w-3 h-3 text-slate-500" />
+                              <span className="truncate max-w-[150px]">{u.email}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              u.isActive
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            }`}
+                          >
+                            {u.isActive ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right text-xs text-slate-400 font-mono">
+                          {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>

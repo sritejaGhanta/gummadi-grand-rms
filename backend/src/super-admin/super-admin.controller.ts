@@ -18,6 +18,12 @@ export class SuperAdminController {
     return this.service.getPlatformMetrics();
   }
 
+  @Get('platform-users')
+  @ApiOperation({ summary: 'List all platform users across all restaurants' })
+  async getPlatformUsers() {
+    return this.service.getAllPlatformUsers();
+  }
+
   @Get('restaurants')
   @ApiOperation({ summary: 'List all onboarded tenant restaurants' })
   async getAllRestaurants() {
