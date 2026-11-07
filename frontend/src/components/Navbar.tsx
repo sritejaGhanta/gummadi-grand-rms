@@ -6,9 +6,9 @@ import { UtensilsCrossed, Bell, LogOut, User, Wifi, WifiOff, Menu, X } from 'luc
 import { useNav } from '../context/NavContext';
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, isSuperAdmin, logout } = useAuth();
   const { connected, lastEvent } = useSocket();
-  const { restaurantName, logoUrl } = useSettings();
+  const { restaurantName, logoUrl, settings } = useSettings();
   const { isMobileOpen, toggleMobile } = useNav();
   const [showNotifications, setShowNotifications] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -16,6 +16,8 @@ export const Navbar: React.FC = () => {
   React.useEffect(() => {
     setImgError(false);
   }, [logoUrl]);
+
+  const saasBrandName = settings?.landing_brand_name || 'AharPOS Cloud HQ';
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between">
@@ -30,7 +32,11 @@ export const Navbar: React.FC = () => {
           {isMobileOpen ? <X className="w-6 h-6 text-amber-400" /> : <Menu className="w-6 h-6" />}
         </button>
 
-        {logoUrl && !imgError ? (
+        {isSuperAdmin ? (
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/30 shrink-0">
+            <span className="text-base font-black tracking-tighter">⚡</span>
+          </div>
+        ) : logoUrl && !imgError ? (
           <img
             src={logoUrl}
             alt={restaurantName}
@@ -44,9 +50,18 @@ export const Navbar: React.FC = () => {
         )}
         <div>
           <h1 className="font-bold text-base sm:text-lg leading-tight tracking-tight text-white flex items-center gap-1.5 sm:gap-2">
-            <span className="truncate max-w-[140px] sm:max-w-none">{restaurantName}</span>
+            <span className="truncate max-w-[140px] sm:max-w-none">
+              {isSuperAdmin ? saasBrandName : restaurantName}
+            </span>
+            {isSuperAdmin && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider hidden sm:inline-block">
+                Master SaaS
+              </span>
+            )}
           </h1>
-          <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block">Intranet Operating System</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 hidden xs:block">
+            {isSuperAdmin ? 'Platform Sovereign Multi-Tenant HQ' : 'Intranet Operating System'}
+          </p>
         </div>
       </div>
 
