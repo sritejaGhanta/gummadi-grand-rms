@@ -312,13 +312,13 @@ export const SuperAdminDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
             <Crown className="w-4 h-4" />
-            <span>SaaS Platform Master Control</span>
+            <span>AharPOS SaaS Platform Master Control</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
-            Super Administrator Dashboard
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+            <span>AharPOS Super Administrator Dashboard</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Manage multi-tenant restaurants, subscription billing, and recurring revenue.
+            Manage multi-tenant client restaurants, subscription tiers, and platform revenue.
           </p>
         </div>
 

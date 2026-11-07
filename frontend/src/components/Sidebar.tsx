@@ -37,7 +37,7 @@ export const Sidebar: React.FC = () => {
     // 0. Super Admin SaaS Platform (Super Admin only)
     {
       to: '/super-admin',
-      label: 'Super Admin (SaaS)',
+      label: 'AharPOS Super Admin',
       icon: Crown,
       show: isSuperAdmin,
     },
@@ -164,7 +164,9 @@ export const Sidebar: React.FC = () => {
   const renderNavLinks = () => (
     <div className="p-3.5 space-y-1">
       <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
-        <span>Navigation</span>
+        <span className={isSuperAdmin ? 'text-amber-400 font-extrabold flex items-center gap-1.5' : ''}>
+          {isSuperAdmin ? '⚡ AharPOS Platform' : 'Navigation'}
+        </span>
         <button
           onClick={closeMobile}
           className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white"

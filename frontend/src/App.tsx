@@ -1,8 +1,8 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { NavProvider } from './context/NavContext';
 import { ShieldAlert } from 'lucide-react';
 
@@ -121,6 +121,33 @@ const ProtectedLayout: React.FC<{
   );
 };
 
+const RouteTitleManager: React.FC = () => {
+  const location = useLocation();
+  const { isSuperAdmin } = useAuth();
+  const { restaurantName, settings } = useSettings();
+
+  useEffect(() => {
+    const isSuper = isSuperAdmin || location.pathname.includes('/super-admin');
+    if (isSuper) {
+      document.title = 'AharPOS — Super Administrator Master Panel';
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link) {
+        link.href = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23f59e0b%22/><text y=%22.75em%22 x=%2250%25%22 font-size=%2260%22 text-anchor=%22middle%22>🔥</text></svg>";
+      }
+    } else if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/landing') {
+      document.title = 'AharPOS — The Operating System for Restaurants';
+    } else {
+      document.title = `${restaurantName || 'Gummadi Grand'} • AharPOS`;
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link && settings?.restaurant_favicon_url) {
+        link.href = settings.restaurant_favicon_url;
+      }
+    }
+  }, [location.pathname, isSuperAdmin, restaurantName, settings]);
+
+  return null;
+};
+
 export const App: React.FC = () => {
   const basename = window.location.pathname.startsWith('/restaurant') ? '/restaurant' : '';
   return (
@@ -129,6 +156,7 @@ export const App: React.FC = () => {
         <SocketProvider>
           <SettingsProvider>
             <NavProvider>
+              <RouteTitleManager />
               <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />

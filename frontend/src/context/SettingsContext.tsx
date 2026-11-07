@@ -70,7 +70,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const applyBrandingToDom = (data: Record<string, string>) => {
     // 1. Dynamic Favicon
-    if (data.restaurant_favicon_url) {
+    const isSuperAdminRoute = typeof window !== 'undefined' && window.location.pathname.includes('/super-admin');
+    if (!isSuperAdminRoute && data.restaurant_favicon_url) {
       let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
       if (!link) {
         link = document.createElement('link');
@@ -78,11 +79,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         document.getElementsByTagName('head')[0].appendChild(link);
       }
       link.href = data.restaurant_favicon_url;
+    } else if (isSuperAdminRoute) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link) {
+        link.href = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23f59e0b%22/><text y=%22.75em%22 x=%2250%25%22 font-size=%2260%22 text-anchor=%22middle%22>🔥</text></svg>";
+      }
     }
 
     // 2. Dynamic Title
-    if (data.restaurant_name) {
-      document.title = `${data.restaurant_name} - Restaurant Management System`;
+    if (isSuperAdminRoute) {
+      document.title = 'AharPOS — Super Administrator Master Panel';
+    } else if (data.restaurant_name) {
+      document.title = `${data.restaurant_name} • AharPOS`;
+    } else {
+      document.title = 'AharPOS — The Operating System for Restaurants';
     }
 
     // 3. Dynamic Primary CSS Color Variables
