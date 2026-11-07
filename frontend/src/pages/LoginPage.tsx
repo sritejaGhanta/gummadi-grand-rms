@@ -133,128 +133,33 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Role Selectors for testing */}
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
-              Instant 1-Click Role Logins (Petpooja SaaS Hierarchy):
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => quickLogin('superadmin', 'superadmin123', '/super-admin')}
-                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 border border-amber-500/30 text-xs font-medium text-amber-200 transition text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-amber-400 shrink-0" />
-                  <div>
-                    <div className="font-bold flex items-center gap-1.5 text-white">
-                      Super Admin <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded">YOU</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">superadmin / superadmin123 (SaaS Multi-Tenant MRR)</div>
+          {/* Super Admin Quick Access & Information */}
+          <div className="pt-4 border-t border-slate-800 space-y-3">
+            <button
+              type="button"
+              onClick={() => quickLogin('superadmin', 'superadmin123', '/super-admin')}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 border border-amber-500/30 text-xs font-medium text-amber-200 transition text-left shadow-lg shadow-amber-500/5"
+            >
+              <div className="flex items-center gap-2.5">
+                <Globe className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <div className="font-bold flex items-center gap-1.5 text-white">
+                    Super Admin Master Login <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded">HQ</span>
                   </div>
+                  <div className="text-[11px] text-slate-400">superadmin / superadmin123 (SaaS Multi-Tenant Cloud HQ)</div>
                 </div>
-              </button>
+              </div>
+              <span className="text-xs font-bold text-amber-400">1-Click Sign In ➔</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => quickLogin('gummadi_owner', 'gummadi123', '/owner-dashboard')}
-                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/40 text-xs font-medium text-emerald-200 transition text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Store className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      Gummadi Grand Owner <span className="text-[10px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded">SURESH</span>
-                    </div>
-                    <div className="text-[10px] text-slate-300">gummadi_owner / gummadi123 (Client Control Room)</div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('gummadi_waiter', 'gummadi123', '/pos')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-emerald-500/30 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <div>
-                  <div className="font-bold text-emerald-300">Gummadi Waiter</div>
-                  <div className="text-[10px] text-slate-400">gummadi_waiter (POS)</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('gummadi_chef', 'gummadi123', '/kitchen')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-emerald-500/30 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <ChefHat className="w-4 h-4 text-emerald-400 shrink-0" />
-                <div>
-                  <div className="font-bold text-emerald-300">Gummadi Chef</div>
-                  <div className="text-[10px] text-slate-400">gummadi_chef (KDS)</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('mandiking_owner', 'mandiking123', '/owner-dashboard')}
-                className="col-span-2 flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-purple-500/30 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Store className="w-5 h-5 text-purple-400 shrink-0" />
-                  <div>
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      Restaurant Owner <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.2 rounded">Mandi King</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">mandiking_owner / mandiking123 (Control Room & Staff)</div>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('admin', 'admin123', '/admin')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <Shield className="w-4 h-4 text-amber-400 shrink-0" />
-                <div>
-                  <div className="font-bold">Outlet Admin</div>
-                  <div className="text-[10px] text-slate-400">admin123</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('manager', 'manager123', '/owner-dashboard')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <Receipt className="w-4 h-4 text-blue-400 shrink-0" />
-                <div>
-                  <div className="font-bold">Store Manager</div>
-                  <div className="text-[10px] text-slate-400">manager123</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('chef', 'chef123', '/kitchen')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <ChefHat className="w-4 h-4 text-emerald-400 shrink-0" />
-                <div>
-                  <div className="font-bold">Head Chef</div>
-                  <div className="text-[10px] text-slate-400">chef123</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('waiter', 'waiter123', '/pos')}
-                className="flex items-center gap-2 p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-xs font-medium text-slate-200 transition text-left"
-              >
-                <Smartphone className="w-4 h-4 text-purple-400 shrink-0" />
-                <div>
-                  <div className="font-bold">Waiter (POS)</div>
-                  <div className="text-[10px] text-slate-400">waiter123</div>
-                </div>
-              </button>
+            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+              <div className="font-bold text-slate-300 flex items-center gap-1.5">
+                <Store className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Restaurant Owners & Staff Login:</span>
+              </div>
+              <p>
+                Use the credentials provided when your restaurant was onboarded via the Super Admin Dashboard.
+              </p>
             </div>
           </div>
         </div>
