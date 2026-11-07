@@ -3,3 +3,10 @@ node_modules/
 npm-debug.*
 *.apk
 *.aab
+dist/
+.gradle/
+android/build/
+android/app/build/
+android/.gradle/
+*.log
+.DS_Store
