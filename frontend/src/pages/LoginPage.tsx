@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { UtensilsCrossed, Lock, User, Sparkles, Shield, ChefHat, Smartphone, Receipt, Globe, Store } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('superadmin');
@@ -11,6 +13,7 @@ export const LoginPage: React.FC = () => {
   const [imgError, setImgError] = useState(false);
   const { login, loading } = useAuth();
   const { restaurantName, logoUrl } = useSettings();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -77,10 +80,13 @@ export const LoginPage: React.FC = () => {
         {/* Card */}
         <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <h3 className="font-bold text-white text-base">Intranet Staff Login</h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              LAN 0-LATENCY
-            </span>
+            <div>
+              <h3 className="font-bold text-white text-base">{t('login.title', 'Intranet Staff Login')}</h3>
+              <p className="text-[11px] text-slate-400">{t('login.subtitle', 'Sign in to access your station')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <LanguageSelector />
+            </div>
           </div>
 
           {error && (
@@ -92,7 +98,7 @@ export const LoginPage: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Username
+                {t('login.username', 'Username')}
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -109,7 +115,7 @@ export const LoginPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Password
+                {t('login.password', 'Password')}
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -129,7 +135,7 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : 'Sign In to Restaurant System'}
+              {loading ? 'Authenticating...' : t('login.btn_submit', 'Sign In to Restaurant System')}
             </button>
           </form>
 
@@ -144,21 +150,21 @@ export const LoginPage: React.FC = () => {
                 <Globe className="w-5 h-5 text-amber-400 shrink-0" />
                 <div>
                   <div className="font-bold flex items-center gap-1.5 text-white">
-                    Super Admin Master Login <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded">HQ</span>
+                    {t('login.superadmin_quick', 'Super Admin Master Login')} <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.2 rounded">HQ</span>
                   </div>
-                  <div className="text-[11px] text-slate-400">superadmin / superadmin123 (SaaS Multi-Tenant Cloud HQ)</div>
+                  <div className="text-[11px] text-slate-400">{t('login.superadmin_sub', 'superadmin / superadmin123 (SaaS Multi-Tenant Cloud HQ)')}</div>
                 </div>
               </div>
-              <span className="text-xs font-bold text-amber-400">1-Click Sign In ➔</span>
+              <span className="text-xs font-bold text-amber-400">{t('login.one_click', '1-Click Sign In ➔')}</span>
             </button>
 
             <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
               <div className="font-bold text-slate-300 flex items-center gap-1.5">
                 <Store className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Restaurant Owners & Staff Login:</span>
+                <span>{t('login.staff_notice', 'Restaurant Owners & Staff Login:')}</span>
               </div>
               <p>
-                Use the credentials provided when your restaurant was onboarded via the Super Admin Dashboard.
+                {t('login.staff_notice_desc', 'Use the credentials provided when your restaurant was onboarded via the Super Admin Dashboard.')}
               </p>
             </div>
           </div>

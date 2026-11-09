@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { useSettings } from '../context/SettingsContext';
 import { UtensilsCrossed, Bell, LogOut, User, Wifi, WifiOff, Menu, X } from 'lucide-react';
 import { useNav } from '../context/NavContext';
+import { LanguageSelector } from './LanguageSelector';
 
 export const Navbar: React.FC = () => {
   const { user, isSuperAdmin, logout, isImpersonating, exitImpersonation } = useAuth();
@@ -94,7 +95,10 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Language Switcher (Every member can choose own language) */}
+        <LanguageSelector />
+
         {/* Connection status */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-800/80 border border-slate-700">
           {connected ? (

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { NavProvider } from './context/NavContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { ShieldAlert } from 'lucide-react';
 
 import { Navbar } from './components/Navbar';
@@ -179,12 +180,13 @@ export const App: React.FC = () => {
   const basename = window.location.pathname.startsWith('/restaurant') ? '/restaurant' : '';
   return (
     <BrowserRouter basename={basename}>
-      <AuthProvider>
-        <SocketProvider>
-          <SettingsProvider>
-            <NavProvider>
-              <RouteTitleManager />
-              <Routes>
+      <LanguageProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <SettingsProvider>
+              <NavProvider>
+                <RouteTitleManager />
+                <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/landing" element={<LandingPage />} />
@@ -365,6 +367,7 @@ export const App: React.FC = () => {
         </SettingsProvider>
       </SocketProvider>
     </AuthProvider>
+    </LanguageProvider>
     </BrowserRouter>
   );
 };

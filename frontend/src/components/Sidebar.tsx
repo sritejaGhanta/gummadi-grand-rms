@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNav } from '../context/NavContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   LayoutDashboard,
   ChefHat,
@@ -32,6 +33,7 @@ import {
 export const Sidebar: React.FC = () => {
   const { isSuperAdmin, isAdmin, isManager, isChef, isStaff, hasPermission } = useAuth();
   const { isMobileOpen, closeMobile } = useNav();
+  const { t } = useLanguage();
   const location = useLocation();
 
   // Automatically close mobile menu on page navigation
@@ -174,81 +176,81 @@ export const Sidebar: React.FC = () => {
 
   const superAdminNav = [
     {
-      group: 'రెస్టారెంట్లు & సిబ్బంది (Restaurants & Staff)',
+      group: t('nav.grp_restaurants_staff', 'Restaurants & Staff'),
       items: [
         {
           tab: 'restaurants',
           to: '/super-admin?tab=restaurants',
-          label: 'Restaurants (రెస్టారెంట్లు)',
+          label: t('nav.restaurants', 'Restaurants'),
           icon: Building2,
         },
         {
           tab: 'platform_users',
           to: '/super-admin?tab=platform_users',
-          label: 'Staff & Logins (సిబ్బంది)',
+          label: t('nav.staff_logins', 'Staff & Logins'),
           icon: Users,
         },
         {
           tab: 'roles_permissions',
           to: '/super-admin?tab=roles_permissions',
-          label: 'Permissions (పర్మిషన్లు)',
+          label: t('nav.permissions', 'Permissions Matrix'),
           icon: ShieldCheck,
         },
       ],
     },
     {
-      group: 'ఆదాయం & ప్లాన్లు (Billing & Plans)',
+      group: t('nav.grp_billing_plans', 'Billing & Plans'),
       items: [
         {
           tab: 'analytics',
           to: '/super-admin?tab=analytics',
-          label: 'Income & Reports (ఆదాయం)',
+          label: t('nav.income_reports', 'Income & Reports'),
           icon: BarChart3,
         },
         {
           tab: 'invoices',
           to: '/super-admin?tab=invoices',
-          label: 'Tax Invoices (జీఎస్టీ బిల్లులు)',
+          label: t('nav.tax_invoices', 'Tax Invoices'),
           icon: FileText,
         },
         {
           tab: 'plans',
           to: '/super-admin?tab=plans',
-          label: 'Plans (సబ్‌స్క్రిప్షన్ ప్లాన్లు)',
+          label: t('nav.plans', 'Subscription Plans'),
           icon: CreditCard,
         },
       ],
     },
     {
-      group: 'సిస్టమ్ & సర్వర్ (System & Health)',
+      group: t('nav.grp_system_health', 'System & Health'),
       items: [
         {
           tab: 'broadcast',
           to: '/super-admin?tab=broadcast',
-          label: 'Notice Board (నోటీస్ బోర్డ్)',
+          label: t('nav.notice_board', 'Notice Board'),
           icon: Radio,
         },
         {
           tab: 'diagnostics',
           to: '/super-admin?tab=diagnostics',
-          label: 'Server Status (సర్వర్ హెల్త్)',
+          label: t('nav.server_status', 'Server Status'),
           icon: Activity,
         },
       ],
     },
     {
-      group: 'వెబ్‌సైట్ & ఎంక్వైరీలు (Website & Leads)',
+      group: t('nav.grp_website_leads', 'Website & Leads'),
       items: [
         {
           tab: 'landing_cms',
           to: '/super-admin?tab=landing_cms',
-          label: 'Website Editor (వెబ్‌సైట్)',
+          label: t('nav.website_editor', 'Website Editor'),
           icon: Globe,
         },
         {
           tab: 'leads',
           to: '/super-admin?tab=leads',
-          label: 'Leads & Inquiries (ఎంక్వైరీలు)',
+          label: t('nav.leads_inquiries', 'Leads & Inquiries'),
           icon: PhoneCall,
         },
       ],
