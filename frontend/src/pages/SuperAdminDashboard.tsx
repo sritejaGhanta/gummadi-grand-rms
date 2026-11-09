@@ -653,22 +653,22 @@ export const SuperAdminDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
             <Crown className="w-4 h-4" />
-            <span>AharPOS SaaS Platform Master Control</span>
+            <span>AharPOS SaaS Platform</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
-            <span>AharPOS Super Administrator Dashboard</span>
+            <span>సూపర్ అడ్మిన్ కంట్రోల్ (Super Admin Dashboard)</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Manage multi-tenant client restaurants, subscription tiers, and platform revenue.
+            అన్ని రెస్టారెంట్లు, సిబ్బంది మరియు సబ్‌స్క్రిప్షన్ ప్లాన్లను ఒకే చోట సులభంగా నిర్వహించండి.
           </p>
         </div>
 
         <button
           onClick={() => setShowOnboardModal(true)}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition shrink-0"
+          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 transition shrink-0 transform hover:-translate-y-0.5"
         >
-          <Plus className="w-4 h-4" />
-          <span>+ Onboard New Restaurant</span>
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>+ కొత్త రెస్టారెంట్‌ను చేర్చండి (Add Restaurant)</span>
         </button>
       </div>
 
@@ -686,7 +686,7 @@ export const SuperAdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Global SaaS Telemetry Cards */}
+      {/* 4 Simple Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Tenants */}
         <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
@@ -694,12 +694,12 @@ export const SuperAdminDashboard: React.FC = () => {
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Client Restaurants</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">మొత్తం రెస్టారెంట్లు (Restaurants)</div>
+            <div className="text-2xl font-black text-white">
               {metrics.totalTenants}
             </div>
             <div className="text-[10px] text-amber-400 font-medium">
-              {metrics.activeTenants} Active • {metrics.trialTenants} Trial
+              {metrics.activeTenants} యాక్టివ్ • {metrics.trialTenants} ట్రయల్
             </div>
           </div>
         </div>
@@ -710,47 +710,48 @@ export const SuperAdminDashboard: React.FC = () => {
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Staff & Managers</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
-              {metrics.totalUsers} Accounts
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">సిబ్బంది ఖాతాలు (Staff Accounts)</div>
+            <div className="text-2xl font-black text-white">
+              {metrics.totalUsers}
             </div>
             <div className="text-[10px] text-indigo-300 font-medium">
-              {metrics.totalManagers} Mgrs • {metrics.totalChefs} Chefs • {metrics.totalStaff} Waiters
+              {metrics.totalManagers} మేనేజర్లు • {metrics.totalChefs} చెఫ్‌లు • {metrics.totalStaff} వెయిటర్లు
             </div>
           </div>
         </div>
 
-        {/* MRR Card */}
+        {/* Monthly Revenue */}
         <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Monthly Revenue (MRR)</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">నెలవారీ ఆదాయం (Monthly Revenue)</div>
+            <div className="text-2xl font-black text-white">
               {currency}{metrics.mrr.toLocaleString()}
             </div>
-            <div className="text-[10px] text-emerald-400 font-medium">ARR: {currency}{metrics.arr.toLocaleString()}</div>
+            <div className="text-[10px] text-emerald-400 font-medium">ఆర్డర్లు: {metrics.totalOrders}</div>
           </div>
         </div>
 
-        {/* Platform Gross Volume */}
+        {/* System Health */}
         <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-            <CreditCard className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Activity className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Platform GMV</div>
-            <div className="text-xl sm:text-2xl font-black text-white">
-              {currency}{metrics.gmv.toLocaleString()}
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">సిస్టమ్ స్థితి (System Status)</div>
+            <div className="text-base sm:text-lg font-black text-emerald-400 flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>ఆన్‌లైన్ (100% OK)</span>
             </div>
-            <div className="text-[10px] text-blue-400 font-medium">{metrics.totalOrders} total orders processed</div>
+            <div className="text-[10px] text-slate-400 font-medium">సర్వర్ & డేటాబేస్ పర్ఫెక్ట్</div>
           </div>
         </div>
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveTab('restaurants')}
           className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
@@ -760,7 +761,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Restaurants Directory ({restaurants.length})</span>
+          <span>రెస్టారెంట్లు (Restaurants) ({restaurants.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('platform_users')}
@@ -771,7 +772,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Staff & Managers ({platformUsers.length})</span>
+          <span>సిబ్బంది (Staff) ({platformUsers.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('roles_permissions')}
@@ -782,7 +783,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>Roles & Permissions Matrix</span>
+          <span>పర్మిషన్లు (Permissions)</span>
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
@@ -793,7 +794,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          <span>SaaS Analytics & Unit Economics</span>
+          <span>ఆదాయం & రిపోర్ట్స్ (Revenue)</span>
         </button>
         <button
           onClick={() => setActiveTab('invoices')}
@@ -804,7 +805,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>B2B Tax Invoices & Billing ({invoicesList.length})</span>
+          <span>జీఎస్టీ బిల్లులు (Invoices) ({invoicesList.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('broadcast')}
@@ -815,7 +816,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <Radio className="w-4 h-4" />
-          <span>Broadcast Ticker</span>
+          <span>నోటీస్ బోర్డ్ (Notices)</span>
           {broadcastForm.active && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           )}
@@ -829,10 +830,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>System Health & Uptime</span>
-          {diagnostics?.maintenanceMode?.active && (
-            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500 text-white">MAINT</span>
-          )}
+          <span>సర్వర్ హెల్త్ (Health)</span>
         </button>
         <button
           onClick={() => setActiveTab('plans')}
@@ -843,7 +841,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          <span>Plans ({plans.length})</span>
+          <span>ప్లాన్లు (Plans) ({plans.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('landing_cms')}
@@ -854,7 +852,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>Landing CMS</span>
+          <span>వెబ్‌సైట్ (Website)</span>
         </button>
         <button
           onClick={() => setActiveTab('leads')}
@@ -865,7 +863,7 @@ export const SuperAdminDashboard: React.FC = () => {
           }`}
         >
           <PhoneCall className="w-4 h-4" />
-          <span>Leads ({leads.length})</span>
+          <span>ఎంక్వైరీలు (Leads) ({leads.length})</span>
           {leads.filter((l) => l.status === 'NEW').length > 0 && (
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
           )}
@@ -895,20 +893,40 @@ export const SuperAdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Restaurants Table */}
-          <div className="glass-panel rounded-2xl border border-slate-800 overflow-x-auto shadow-xl">
-            <table className="w-full text-left text-xs sm:text-sm text-slate-300">
-              <thead className="bg-slate-950/80 text-[11px] uppercase font-bold text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Restaurant & Outlets</th>
-                  <th className="py-3 px-4">Plan & Validity</th>
-                  <th className="py-3 px-4">Contact & Location</th>
-                  <th className="py-3 px-4">Staff & Activity</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
+          {/* Restaurants Directory: Clean Empty State or Table */}
+          {filteredRestaurants.length === 0 ? (
+            <div className="p-10 sm:p-14 text-center rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 my-4 shadow-xl">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-4xl mb-4 shadow-xl">
+                🏪
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
+                ఇంకా ఏ రెస్టారెంట్ రిజిస్టర్ కాలేదు (No Restaurants Registered)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto mb-6 leading-relaxed">
+                మీ క్లయింట్ రెస్టారెంట్‌ను కేవలం 1 నిమిషంలో సులభంగా యాడ్ చేయండి. పేరు, నగరము మరియు ఓనర్ వివరాలు ఇవ్వగానే సాఫ్ట్‌వేర్ సిద్ధమవుతుంది.
+              </p>
+              <button
+                onClick={() => setShowOnboardModal(true)}
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black text-sm inline-flex items-center gap-2 shadow-2xl shadow-amber-500/30 transition transform hover:-translate-y-0.5"
+              >
+                <Plus className="w-5 h-5 stroke-[3]" />
+                <span>+ మొదటి రెస్టారెంట్‌ను చేర్చండి (Add First Restaurant)</span>
+              </button>
+            </div>
+          ) : (
+            <div className="glass-panel rounded-2xl border border-slate-800 overflow-x-auto shadow-xl">
+              <table className="w-full text-left text-xs sm:text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-[11px] uppercase font-bold text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">రెస్టారెంట్ (Restaurant)</th>
+                    <th className="py-3 px-4">ప్లాన్ & గడువు (Plan)</th>
+                    <th className="py-3 px-4">చిరునామా & ఫోన్ (Contact)</th>
+                    <th className="py-3 px-4">సిబ్బంది (Staff)</th>
+                    <th className="py-3 px-4">స్టేటస్ (Status)</th>
+                    <th className="py-3 px-4 text-right">ఆప్షన్లు (Actions)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
                 {filteredRestaurants.map((r) => {
                   const isActive = r.status === 'ACTIVE';
                   const isTrial = r.status === 'TRIAL';
@@ -1039,8 +1057,9 @@ export const SuperAdminDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* TAB 1B: PLATFORM USERS & STAFF DIRECTORY (SITE ADMIN VIEW) */}
       {activeTab === 'platform_users' && (

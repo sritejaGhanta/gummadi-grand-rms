@@ -174,88 +174,82 @@ export const Sidebar: React.FC = () => {
 
   const superAdminNav = [
     {
-      group: 'Tenants & Access',
+      group: 'రెస్టారెంట్లు & సిబ్బంది (Restaurants & Staff)',
       items: [
         {
           tab: 'restaurants',
           to: '/super-admin?tab=restaurants',
-          label: 'Restaurants Directory',
+          label: 'Restaurants (రెస్టారెంట్లు)',
           icon: Building2,
-          badge: '5',
         },
         {
           tab: 'platform_users',
           to: '/super-admin?tab=platform_users',
-          label: 'Staff & Managers',
+          label: 'Staff & Logins (సిబ్బంది)',
           icon: Users,
-          badge: '12',
         },
         {
           tab: 'roles_permissions',
           to: '/super-admin?tab=roles_permissions',
-          label: 'Roles & Permissions Matrix',
+          label: 'Permissions (పర్మిషన్లు)',
           icon: ShieldCheck,
         },
       ],
     },
     {
-      group: 'Finance & Subscriptions',
+      group: 'ఆదాయం & ప్లాన్లు (Billing & Plans)',
       items: [
         {
           tab: 'analytics',
           to: '/super-admin?tab=analytics',
-          label: 'SaaS Analytics & Economics',
+          label: 'Income & Reports (ఆదాయం)',
           icon: BarChart3,
         },
         {
           tab: 'invoices',
           to: '/super-admin?tab=invoices',
-          label: 'B2B Tax Invoices & Billing',
+          label: 'Tax Invoices (జీఎస్టీ బిల్లులు)',
           icon: FileText,
-          badge: '5',
         },
         {
           tab: 'plans',
           to: '/super-admin?tab=plans',
-          label: 'Subscription Plans & Tiers',
+          label: 'Plans (సబ్‌స్క్రిప్షన్ ప్లాన్లు)',
           icon: CreditCard,
-          badge: '5',
         },
       ],
     },
     {
-      group: 'Operations & Health',
+      group: 'సిస్టమ్ & సర్వర్ (System & Health)',
       items: [
         {
           tab: 'broadcast',
           to: '/super-admin?tab=broadcast',
-          label: 'Broadcast Ticker',
+          label: 'Notice Board (నోటీస్ బోర్డ్)',
           icon: Radio,
         },
         {
           tab: 'diagnostics',
           to: '/super-admin?tab=diagnostics',
-          label: 'System Health & Uptime',
+          label: 'Server Status (సర్వర్ హెల్త్)',
           icon: Activity,
         },
       ],
     },
     {
-      group: 'Marketing & Sales',
+      group: 'వెబ్‌సైట్ & ఎంక్వైరీలు (Website & Leads)',
       items: [
         {
           tab: 'landing_cms',
           to: '/super-admin?tab=landing_cms',
-          label: 'Landing Website CMS',
+          label: 'Website Editor (వెబ్‌సైట్)',
           icon: Globe,
         },
         {
           tab: 'leads',
           to: '/super-admin?tab=leads',
-          label: 'Demo Inquiries & Leads',
+          label: 'Leads & Inquiries (ఎంక్వైరీలు)',
           icon: PhoneCall,
-          badge: '7',
-          badgeColor: 'bg-rose-500/20 text-rose-400 border border-rose-500/30',
         },
       ],
     },
@@ -306,15 +300,15 @@ export const Sidebar: React.FC = () => {
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </div>
-                {item.badge && (
+                {(item as any).badge && (
                   <span
                     className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-md ${
                       isActive
                         ? 'bg-slate-950 text-amber-400'
-                        : item.badgeColor || 'bg-slate-800 text-slate-400 border border-slate-700'
+                        : (item as any).badgeColor || 'bg-slate-800 text-slate-400 border border-slate-700'
                     }`}
                   >
-                    {item.badge}
+                    {(item as any).badge}
                   </span>
                 )}
               </NavLink>
