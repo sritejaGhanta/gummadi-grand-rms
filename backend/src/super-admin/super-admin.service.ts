@@ -78,8 +78,7 @@ export class SuperAdminService {
 
     const gmv = parseFloat(totalSalesRaw?.sum || '0');
 
-    // Platform User & Staff Breakdown
-    const totalUsers = await this.userRepo.count();
+    // Platform User & Staff Breakdown (Count only restaurant staff, exclude Super Admin)
     const managerRole = await this.roleRepo.findOne({ where: { name: 'manager' } });
     const staffRole = await this.roleRepo.findOne({ where: { name: 'staff' } });
     const chefRole = await this.roleRepo.findOne({ where: { name: 'chef' } });
@@ -89,6 +88,7 @@ export class SuperAdminService {
     const totalStaff = staffRole ? await this.userRepo.count({ where: { roleId: staffRole.id } }) : 0;
     const totalChefs = chefRole ? await this.userRepo.count({ where: { roleId: chefRole.id } }) : 0;
     const totalAdmins = adminRole ? await this.userRepo.count({ where: { roleId: adminRole.id } }) : 0;
+    const totalUsers = totalManagers + totalStaff + totalChefs + totalAdmins;
 
     return {
       totalTenants,
@@ -107,10 +107,13 @@ export class SuperAdminService {
   }
 
   async getAllPlatformUsers() {
-    const users = await this.userRepo.find({
+    const allUsers = await this.userRepo.find({
       relations: ['role'],
       order: { createdAt: 'DESC' },
     });
+
+    // Exclude sovereign Super Admin from restaurant staff list
+    const users = allUsers.filter((u) => u.role?.name !== 'superadmin');
 
     const restaurants = await this.restaurantRepo.find();
     const restMap = new Map(restaurants.map((r) => [r.id, r]));
@@ -127,7 +130,7 @@ export class SuperAdminService {
         roleName: u.role?.name || 'user',
         roleDisplayName: u.role?.displayName || u.role?.name || 'Staff',
         restaurantId: u.restaurantId,
-        restaurantName: rest?.name || (u.role?.name === 'superadmin' ? 'AharPOS Cloud HQ' : 'Standalone'),
+        restaurantName: rest?.name || 'Standalone',
         restaurantCity: rest?.city || 'HQ',
         lastLoginAt: u.lastLoginAt,
         createdAt: u.createdAt,
